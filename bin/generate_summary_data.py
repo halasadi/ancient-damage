@@ -14,10 +14,12 @@ def find_substitutions(aligned_pairs):
 ### "AAG->TCC" 
 def get_pattern(ind, aligned_pairs, seq):
     ref = aligned_pairs[ind][2].upper()
-    mut = seq[aligned_pairs[ind][0]]
-    patt = seq[ind-2] + seq[ind-1] + ref + ':' + mut + seq[ind+1] + seq[ind+2]
+    mut = seq[ind]
+    patt = seq[ind-2] + seq[ind-1] + ref + '->' + mut + seq[ind+1] + seq[ind+2]
     return(patt)
 
+
+MIN_BQ_SCORE = 20
 
 if __name__ == '__main__':
 
@@ -44,6 +46,9 @@ if __name__ == '__main__':
                 # and that it's a substitution
                 mut = seq[aligned_pairs[ind][0]]
                 if (ind < 2 or ind > (len(seq)-3) or mut == 'N'):
+                    continue
+                quality_scores = read.query_qualities
+                if (quality_scores[ind-2] < MIN_BQ_SCORE or quality_scores[ind-1] < MIN_BQ_SCORE or quality_scores[ind] < MIN_BQ_SCORE or quality_scores[ind+1] < MIN_BQ_SCORE or quality_scores[ind+2] < MIN_BQ_SCORE):
                     continue
                 patt = get_pattern(ind, aligned_pairs, seq)
                 if patt in patternsDict:
