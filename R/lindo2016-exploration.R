@@ -1,7 +1,7 @@
 
 ##  Exploration of the Lindo2016 data 
 
-signature_counts <- get(load("../summary_data/signature-counts-Lindo2016.rda"))
+signature_counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016.rda"))
 
 signature_set <- colnames(signature_counts)
 ###  number of mutations 
@@ -54,11 +54,11 @@ sort(pr$rotation[,2], decreasing=TRUE)[1:5]
 ########   CountClust performance (with C-> T and G -> A) ########################
 
 library(CountClust)
-#topics_clus <- FitGoM(signature_counts,
-#                      tol=0.1,
-#                      K=2:4)
+topics_clus <- FitGoM(signature_counts,
+                      tol=0.1,
+                      K=2:4)
 
-# save(topics_clus, file="CountClust_output_Lindo2016_with_C_to_T.rda")
+ save(topics_clus, file="../rda/CountClust_output_Lindo2016_with_C_to_T.rda")
 
 topics_clus <- get(load("../rda/CountClust_output_Lindo2016_with_C_to_T.rda"));
 
@@ -158,11 +158,11 @@ apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="mi
 ########   CountClust performance (no C-> T and G -> A) ########################
 
 library(CountClust)
-#topics_clus <- FitGoM(signature_counts_filter_C_to_T,
-#                      tol=0.1,
-#                      K=2:4)
+topics_clus <- FitGoM(signature_counts_filter_C_to_T,
+                      tol=0.1,
+                      K=2:4)
 
-#save(topics_clus, file="CountClust_output_Lindo2016_without_C_to_T.rda")
+save(topics_clus, file="../rda/CountClust_output_Lindo2016_without_C_to_T.rda")
 
 topics_clus <- get(load("../rda/CountClust_output_Lindo2016_without_C_to_T.rda"))
 
