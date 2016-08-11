@@ -1,7 +1,7 @@
 
 ##  Exploration of the Lindo2016 data 
 
-signature_counts <- get(load("signature-counts-Lindo2016.rda"))
+signature_counts <- get(load("../summary_data/signature-counts-Lindo2016.rda"))
 
 signature_set <- colnames(signature_counts)
 ###  number of mutations 
@@ -29,6 +29,8 @@ indices <- union(indices1, indices2);
 
 signature_counts_filter_C_to_T <- signature_counts[,-indices];
 
+signature_set_filter <- colnames(signature_counts_filter_C_to_T)
+
 
 pr <- prcomp(t(limma::voom(t(signature_counts_filter_C_to_T))$E))
 
@@ -37,6 +39,10 @@ pc_data_frame_filt <- data.frame("PC"=pr$x,
                                             rep("Modern",25)))
 
 qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame_filt,
+      colour=labels)
+
+qplot(PC.PC2, PC.PC3,
       data=pc_data_frame_filt,
       colour=labels)
 
@@ -52,9 +58,9 @@ library(CountClust)
 #                      tol=0.1,
 #                      K=2:4)
 
-save(topics_clus, file="CountClust_output_Lindo2016_with_C_to_T.rda")
+# save(topics_clus, file="CountClust_output_Lindo2016_with_C_to_T.rda")
 
-topics_clus <- get(load("CountClust_output_Lindo2016_with_C_to_T.rda"));
+topics_clus <- get(load("../rda/CountClust_output_Lindo2016_with_C_to_T.rda"));
 
 ##############  clusters :  2#######################
 
@@ -152,13 +158,13 @@ apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="mi
 ########   CountClust performance (no C-> T and G -> A) ########################
 
 library(CountClust)
-topics_clus <- FitGoM(signature_counts_filter_C_to_T,
-                      tol=0.1,
-                      K=2:4)
+#topics_clus <- FitGoM(signature_counts_filter_C_to_T,
+#                      tol=0.1,
+#                      K=2:4)
 
-save(topics_clus, file="CountClust_output_Lindo2016_without_C_to_T.rda")
+#save(topics_clus, file="CountClust_output_Lindo2016_without_C_to_T.rda")
 
-topics_clus <- get(load("CountClust_output_Lindo2016_without_C_to_T.rda"))
+topics_clus <- get(load("../rda/CountClust_output_Lindo2016_without_C_to_T.rda"))
 
 ##################  clusters:  2 ###################################
 
@@ -187,7 +193,7 @@ theta <- topics_clus$clust_2$theta;
 sort(theta[,1])[1:10]
 sort(theta[,2])[1:10]
 
-apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_filter[x])
 
 
 ################## clusters: 3  ########################
@@ -219,7 +225,7 @@ sort(theta[,1])[1:10]
 sort(theta[,2])[1:10]
 sort(theta[,3])[1:10]
 
-apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_filter[x])
 
 ################## clusters: 4  ########################
 
@@ -252,5 +258,5 @@ sort(theta[,2])[1:10]
 sort(theta[,3])[1:10]
 sort(theta[,4])[1:10]
 
-apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_filter[x])
 

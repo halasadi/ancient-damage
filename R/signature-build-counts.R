@@ -1,8 +1,8 @@
 
 ###  Build signature counts matrix (Moderns + Ancients)
 
-modern_files <- list.files("modern-signature-counts/")
-ancient_files <- list.files("ancient-signature-counts/")
+modern_files <- list.files("../summary_data/modern-signature-counts/")
+ancient_files <- list.files("../summary_data/ancient-signature-counts/")
 
 ## check how many moderns and how many ancients we have 
 
@@ -17,13 +17,13 @@ signature_counts_modern <- vector(mode="list")
 signature_counts_ancient <- vector(mode="list")
 
 for(num in 1:length(modern_files)){
-  data <- read.csv(paste0("modern-signature-counts/",modern_files[num]), header=FALSE)
+  data <- read.csv(paste0("../summary_data/modern-signature-counts/",modern_files[num]), header=FALSE)
   signature_counts_modern[[num]] <- data[,2];
   signature_modern[[num]] <- as.character(data[,1]);
 }
 
 for(num in 1:length(ancient_files)){
-  data <- read.csv(paste0("ancient-signature-counts/",ancient_files[num]), header=FALSE)
+  data <- read.csv(paste0("../summary_data/ancient-signature-counts/",ancient_files[num]), header=FALSE)
   signature_counts_ancient[[num]] <- data[,2];
   signature_ancient[[num]] <- as.character(data[,1]);
 }
@@ -75,6 +75,6 @@ signature_counts_data_pooled_filtered <- signature_counts_data_pooled[,-indices]
 sig_split <- do.call(rbind, lapply(colnames(signature_counts_data_pooled_filtered), function(x) strsplit(as.character(x), split="")[[1]]))
 # which(temp[,3]==temp[,6])
 
-save(signature_counts_data_pooled_filtered,
-            file="signature-counts-Lindo2016.rda")
+#save(signature_counts_data_pooled_filtered,
+#            file="../summary_data/signature-counts-Lindo2016.rda")
 
