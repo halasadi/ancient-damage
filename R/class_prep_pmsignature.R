@@ -135,3 +135,104 @@ StructureGGplot(omega = omega,
 #########   Reperform topic model removing C -> T  ###########
 
 
+indices_noCtoT <- which(mut_features_mat[,1]!=3);
+
+dim(signature_counts)
+signature_counts_noCtoT <- signature_counts[,indices_noCtoT];
+
+mut_features_mat_noCtoT <-  mut_features_mat[indices_noCtoT,];
+
+stm <- CheckCounts(signature_counts_noCtoT)
+
+proc_count_noCtoT <- cbind(stm$j, stm$i, stm$v)
+rownames(proc_count_noCtoT) <- NULL
+
+G <- new(Class = "MutationFeatureData", 
+         type = "custom",
+         flankingBasesNum = as.integer(numBases),
+         transcriptionDirection = trDir,
+         possibleFeatures = as.integer(fdim),
+         featureVectorList = t(mut_features_mat_noCtoT),
+         sampleList = sample_names,
+         countData = t(proc_count_noCtoT),
+         mutationPosition = data.frame()
+)
+
+Param <- getPMSignature(G, K = 4, numInit = 5)
+visPMSignature(Param, 1)
+visPMSignature(Param, 2)
+visPMSignature(Param, 3)
+visPMSignature(Param, 4)
+
+omega <- slot(Param, "sampleSignatureDistribution")
+library(CountClust)
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+###########################################################
+
+signature_counts_noCtoT 
+
+pr <- prcomp(t(limma::voom(t(signature_counts_noCtoT))$E))
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                            "labels"=c(rep("Ancient",25),
+                                       rep("Modern",25)))
+
+qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+library(CountClust)
+topics_clus <- FitGoM(signature_counts_noCtoT,
+                      tol=0.1,
+                      K=2:4)
+
+save(topics_clus, file="../rda/CountClust_output_Lindo2016_without_C_to_T.rda")
+
+topics_clus <- get(load("../rda/CountClust_output_Lindo2016_without_C_to_T.rda"));
+
+omega <- topics_clus$clust_4$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = c(rep("Ancient",25),rep("Modern",25))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = rev(RColorBrewer::brewer.pal(8, "Accent")),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],", no C -> T / G -> A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+theta <- topics_clus$clust_4$theta;
+sort(theta[,1])[1:10]
+sort(theta[,2])[1:10]
+
+signature_set_noCtoT <- signature_set[indices_noCtoT]
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_noCtoT [x])
+
