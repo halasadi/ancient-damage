@@ -1,0 +1,78 @@
+---
+title: "DNA damage signature model"
+author: "Kushal K Dey, Hussein Al Asadi"
+date: "July 8, 2016"
+output: html_document
+---
+
+## Introduction
+
+DNA is subject to damage with age in fossil remains. There are certain damage patterns that tend to differentiate ancient samples from modern samples and also across ancient samples of different fossil ages.  Three such damage characteristics commonly observed are 
+
+- *smaller fragment lengths compared to modern DNA*.
+- *purine enrichment in the -1 base position from the strand breaks*.
+- *C to T substitutions tend to occur more at $5^{'}$ ends of the molecules that increase with time*.
+
+It has been observed that the fragment lengths do not change a lot with age of the samples but $C \rightarrow T$ changes become more prominent with age.
+
+
+<img src="C_to_T.png" alt="CtoT" style="width:500px;height:300px;">
+
+
+### Goal of Damage signature method
+
+We are interested in modeling and visualization of the DNA damage patterns. Shiraishi et al (2015) modeled mutation signatures across cancer samples and 
+inferred which substitutions and flanking bases are over-represented in cancer samples.
+
+The idea here is to extend the same approach to model DNA damage. The goal is two-fold
+
+- *DNA contamination detection*: extract damage signatures that can separate out ancient samples from modern samples. Ancient samples may have higher grades of membership on some signatures that are specific to ancient data. Moderns may have higher grades of membership on patterns not specific to the ancient data.
+
+- *Age and enviornmental conditions of samples*: To see how the grades of membership for the different damage signatures vary across samples of different ages and different enviornment. 
+
+- *Patterns characteristics*: To check if the signatures show patterns like $C \rightarrow T$ decrease with nucleotide positions starting from the $5^{'}$ end. Are there flanking bases from the $C \rightarrow T$ substitution that seem sto show some patterns? 
+
+A popular program Mapdamage, a software that quantifies the damage patterns in ancient reads. It plots the proportion of different bases at positions starting from the $5^{'}$ end of the strand to the right and $3^{'}$ end to the left.And also plots the base composition along the position of the read.
+
+### Characteristics of mutation signature model
+
+In the **pmsignature** model, the key characteristics of the mutation signatures were 
+
+- A substitution at the center
+- One/two flanking bases to the left and the right
+- Strand information ($+$ and $-$)
+
+### Expectations from the  Damage signature model
+
+The key characteristics *we want* in the damage-signature model
+
+- capture the fact that $C \rightarrow T$ occur frequently near the $5^{'}$ ends of the strands.
+- Determine the proportion of different bases flanking $C \rightarrow T$ and what can we say about them.
+- unlike mutation signatures, where substituitions occur far apart, here one can expect to see $C \rightarrow T$ in close proximity near the $5^{'}$ end and sometimes $C \rightarrow T$ may happen in adjacent or nearly adjacent nucleotide positions. Can we detect that feature?
+- can we track the purine enrichment near strand breaks?
+
+### Possible Signature Models
+
+We consider two possible signature definitions
+
+- For each nucleotide position starting from $5^{'}$ end, we assume 6 possibilities, $A$, $T$, $G$, $C$, $C \rightarrow T$ and other mutations. Like mapdamage, we look at nucleotide positions from $+1$ to $+10$ of the strand.
+
+<img src="damagesig1/damagesig1.001.jpeg" alt="CtoT" style="width:700px;height:500px;">
+
+- For each $C \rightarrow T$, we look at the flanking bases (assume 6 possibilities  $A$, $T$, $G$, $C$, $C \rightarrow T$ and other mutations), record the base location of the $C \rightarrow T$ substituition to get a probability mass function on the base location of $C$ to $T$. 
+
+<img src="damagesig2/damagesig2.001.jpeg" alt="CtoT" style="width:700px;height:500px;">
+
+
+### Simulate DNA damage pattern
+
+Can we use the popular notion of $C \rightarrow T$ damage patterns (See the figure above) to simulated damaged reads from ancient samples??
+
+
+
+
+
+
+
+
+
