@@ -36,9 +36,9 @@ topics_clus <- FitGoM(signature_counts_noCtoT,
                       tol=0.1,
                       K=2:4)
 
-save(topics_clus, file="pmsignature_fit_noCtoT_2_to_4.rda")
+#save(topics_clus, file="../rda/pmsignature_fit_noCtoT_2_to_4.rda")
 
-topics_clus <- get(load("pmsignature_fit_noCtoT_2_to_4.rda"))
+topics_clus <- get(load("../rda/pmsignature_fit_noCtoT_2_to_4.rda"))
 
 theta <- topics_clus$clust_4$theta;
 omega <- topics_clus$clust_4$omega

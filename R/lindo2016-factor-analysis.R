@@ -94,14 +94,24 @@ signature_counts_no_CtoT <- signature_counts[,-indices];
 voom_signature_counts_no_CtoT <- t(limma::voom(t(signature_counts_no_CtoT))$E);
 voom_weights <- t(limma::voom(t(signature_counts_no_CtoT))$weights);
 
+### The FLASH with partype="constant" works better
+
 ll <- greedy(voom_signature_counts_no_CtoT, K=10, 
              flash_para = list(tol=1e-3, maxiter_r1 = 100,
-                               partype="known", sigmae2_true = voom_weights,
+                               partype="constant",
                                nonnegative=FALSE));
 
-ll2 <- flashpool(voom_signature_counts_no_CtoT, K=6, 
+### THE FLASH with partype="voom weights" not as good
+
+ll <- greedy(voom_signature_counts_no_CtoT, K=10, 
+             flash_para = list(tol=1e-3, maxiter_r1 = 100,
+                               partype="known",
+                               sigmae2_true = voom_weights,
+                               nonnegative=FALSE));
+
+ll2 <- flashpool(voom_signature_counts_no_CtoT, K=10, 
                  tol=1e-3, maxiter_r1 = 100,
-                 partype="known", sigmae2_true = voom_weights,
+                 partype="constant",
                  nonnegative=FALSE)
 
 annotation <- data.frame(
@@ -111,6 +121,9 @@ annotation <- data.frame(
 
 rownames(ll$l) <- paste0("X", c(1:NROW(ll$l)));
 
+source("../../benchmarking/benchmarkR/FactorGGBar.R")
+source("../../benchmarking/benchmarkR/FactorGGplot.R")
+library(ggplot2)
 FactorGGBar(loadings = ll$l,
             annotation = annotation,
             palette = list("mid"="white", 
@@ -166,16 +179,16 @@ write.table(voom_signature_counts_no_CtoT, file="../summary_data/sfa_input_voom_
 #  ./sfa_mac -gen ../../sfa_inputs/sfa_input_voom_sig_with_CtoT_lindo2016.txt -g 50 -n 1536 -k 5 -iter 500 -r 800 -mn -mg -o ../../sfa_outputs/Lindo2016/voom_lindo_with_CtoT
 
 ###  Case 1 : with CtoT included #######################
-# Expected complete Log likelihood at iteration 500: 8047.85
-# Marginal log likelihood at iteration 500: -25484
-# Residual variance at iteration 500: 72.649
-# Residual sum of squares at iteration 500: 7227.68
+Expected complete Log likelihood at iteration 500: 25080.9
+Marginal log likelihood at iteration 500: -15299.9
+Residual variance at iteration 500: 0.664982
+Residual sum of squares at iteration 500: 3394.72
 
 ###   Case 2 : without C to T  ########################
-# Expected complete Log likelihood at iteration 500: 12159.9
-# Marginal log likelihood at iteration 500: -22889
-# Residual variance at iteration 500: 71.2059
-# Residual sum of squares at iteration 500: 6649.5
+Expected complete Log likelihood at iteration 500: 27321
+Marginal log likelihood at iteration 500: -13636.7
+Residual variance at iteration 500: 0.25687
+Residual sum of squares at iteration 500: 3167.4
 
 ll_load <- read.table("../utilities/sfa_Lindo2016/with_CtoT/voom_lindo_with_CtoT_lambda.out")
 dim(ll_load)
