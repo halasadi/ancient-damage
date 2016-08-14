@@ -24,7 +24,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     samfile = pysam.AlignmentFile(args.bamfile, "rb") 
-    fasta = pysam.FastaFile(args.fastafile)
+    fastafile = pysam.FastaFile(args.fastafile)
     
     nFlanking = int(args.nflanking)
 
@@ -52,13 +52,14 @@ if __name__ == '__main__':
                 # need to check if they are of the same length
                 if (len(quality_scores) != len(aligned_pairs)):
                     continue
-                if (mut == 'N' or quality_scores[ind] < MIN_BQ_SCORE):
+                # throw away mutation on the first and last two base pairs
+                if (mut == 'N' or quality_scores[ind] < MIN_BQ_SCORE or ind < 2 or ind > (len(seq)-3) or ind < read.qstart or ind > read.qend):
                     continue
                 pos = aligned_pairs[ind][1]
-                leftFlank = fasta.fetch(chr, pos-nFlanking, pos)
-                ref = fasta.fetch(chr, pos, pos+1)
-                rightFlank = fasta.fetch(chr, pos+1, pos+nFlanking+1)
-                patt = leftFlank.upper() + ref.upper() + '->' + mut + rightFlank.upper()
+                
+                ref = fastafile.fetch(chr, pos-nFlanking, pos+nFlanking+1)
+                ref = ref.upper()
+                patt = ref[:(nFlanking+1)] + '->' + mut + ref[-nFlanking:]
                 if patt in patternsDict:
                     patternsDict[patt] += 1
                 else:
