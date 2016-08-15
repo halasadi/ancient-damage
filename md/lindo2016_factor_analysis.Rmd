@@ -183,7 +183,7 @@ annotation <- data.frame(
 rownames(ll$l) <- paste0("X", c(1:NROW(ll$l)));
 
 FactorGGBar(loadings = ll$l,
-             annotation = annotation,
+            annotation = annotation,
             palette = list("mid"="white", 
                            "low"="red", 
                            "high"="blue", 
@@ -431,21 +431,23 @@ topics_clus <- get(load("../rda/CountClust_output_Lindo2016_with_C_to_T.rda"))
 theta <- topics_clus$clust_2$theta;
 omega <- topics_clus$clust_2$omega
 
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+sample_names <- rownames(signature_counts)
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+
+
 K <- dim(omega)[2]
 F <- array(0, c(K, length(fdim), max(fdim)))
 for(k in 1:K){
   for(kk in 1:length(fdim)){
-    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
     F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
   }
 }
-
-isBG <- TRUE
-type <- "independent"
-flankingBasesNum = as.integer(numBases)
-trDir <- FALSE
-fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
-sample_names <- 
 
 
 Param <- new(Class = "EstimatedParameters", 
@@ -453,16 +455,169 @@ Param <- new(Class = "EstimatedParameters",
            flankingBasesNum = flankingBasesNum,
            transcriptionDirection = trDir,
            possibleFeatures = as.integer(fdim),
-           sampleList = slot(mutationFeatureData, "sampleList"),
+           sampleList = sample_names,
            signatureNum = as.integer(K),
            isBackGround = isBG,
            signatureFeatureDistribution = F,
            sampleSignatureDistribution = omega,
            loglikelihood = -100000)
 
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 2))
 
-visPMSignature(Param, 1)
-visPMSignature(Param, 2)
+omega <- slot(Param, "sampleSignatureDistribution")
+library(CountClust)
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+
+### K=3
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 3))
+
+omega <- slot(Param, "sampleSignatureDistribution")
+library(CountClust)
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+### K=4
+
+```{r}
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+graphList[[4]] <- visPMSignature(Param, 4)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 2,
+                      nrow = 2))
 
 omega <- slot(Param, "sampleSignatureDistribution")
 library(CountClust)
@@ -486,6 +641,76 @@ StructureGGplot(omega = omega,
                                  axis_label_face = "bold"))
 
 apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+graphList <- list(mode="vector")
+
+index <- c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+
+prop_clus_sig <- do.call(cbind, lapply(1:dim(theta)[2], function(l) return(tapply(theta[,l], sub_pattern, sum))))
+
+for(num in 1:length(index)){
+theta_filt <- matrix(0, dim(theta)[1], dim(theta)[2])
+theta_filt[which(sub_pattern==index[num]),] <- theta[which(sub_pattern==index[num]),];
+theta_filt_norm <- apply(theta_filt, 2, function(x) return(normalize(x)))
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(theta)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta_filt_norm[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList[[num]] <- list(mode="vector")
+  for(k in 1:dim(theta)[2]){
+        b <- visPMSignature(Param,k);
+        b <- b +ggtitle(paste("prop frequency: ", round(prop_clus_sig[num,k],2))) + theme(plot.title = element_text(size = 8, face = "bold"))
+        graphList[[num]][[k]] <- b
+  }
+}
+
+for(k in 1:dim(theta)[2]){
+graphviz_list <- lapply(1:length(index), function(n) graphList[[n]][[k]])
+
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphviz_list,
+                      ncol = 2,
+                      nrow = 3,
+                       top=textGrob(paste0("Cluster:", k),                                gp=gpar(fontsize=15,                                         font=3))))
+}
+
+
 
 
 ```
