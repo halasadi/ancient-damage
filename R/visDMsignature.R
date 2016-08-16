@@ -1,9 +1,10 @@
 
 
 visDMSignature <- function(theta,
+                           index_sub  = c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G"),
                            pattern,
+                           mutation_features_matrix,
                            sample_names,
-                           numBases=5,
                            flankingBasesNum,
                            trDir,
                            fdim,
@@ -14,13 +15,13 @@ visDMSignature <- function(theta,
   
   graphList <- list(mode="vector")
   
-  index <- c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+ # index <- c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
   
-  prop_clus_sig <- do.call(cbind, lapply(1:dim(theta)[2], function(l) return(tapply(theta[,l], sub_pattern, sum))))
+  prop_clus_sig <- do.call(cbind, lapply(1:dim(theta)[2], function(l) return(tapply(theta[,l], pattern, sum))))
   
-  for(num in 1:length(index)){
+  for(num in 1:length(index_sub)){
     theta_filt <- matrix(0, dim(theta)[1], dim(theta)[2])
-    theta_filt[which(sub_pattern==index[num]),] <- theta[which(sub_pattern==index[num]),];
+    theta_filt[which(pattern==index_sub[num]),] <- theta[which(pattern==index_sub[num]),];
     theta_filt_norm <- apply(theta_filt, 2, function(x) return(normalize(x)))
     
     isBG <- TRUE
@@ -28,7 +29,7 @@ visDMSignature <- function(theta,
     F <- array(0, c(K, length(fdim), max(fdim)))
     for(k in 1:K){
       for(kk in 1:length(fdim)){
-        temp <- tapply(theta_filt_norm[,k], mut_features_mat[,kk], sum)
+        temp <- tapply(theta_filt_norm[,k], mutation_features_matrix[,kk], sum)
         F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
       }
     }
@@ -54,7 +55,7 @@ visDMSignature <- function(theta,
   }
       
   for(k in 1:dim(theta)[2]){
-    graphviz_list <- lapply(1:length(index), function(n) graphList[[n]][[k]])
+    graphviz_list <- lapply(1:length(index_sub), function(n) graphList[[n]][[k]])
     
     
     library(grid)
@@ -63,6 +64,7 @@ visDMSignature <- function(theta,
             args = list(grobs=graphviz_list,
                         ncol = layout[2],
                         nrow = layout[1],
-                        top=textGrob(paste0("Cluster:", k),                                gp=gpar(fontsize=15,                                         font=3))))
+                        top=textGrob(paste0("Cluster:", k), 
+                        gp=gpar(fontsize=panel_title_size,  font=panel_title_font))))
   }
 }

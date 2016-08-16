@@ -1,11 +1,19 @@
 ---
-title: "Factor Analysis on Ancient Damage Data"
+title: "Ancient Damage Data: R pipeline"
 author: "Kushal K Dey"
 date: "August 14, 2016"
-output: html_document
+output: 
+  html_document:
+    css: floating-toc.css
+    toc: true
 ---
 
-```{r echo=FALSE, eval=TRUE}
+
+## Packages + Scripts
+
+We load the packages and source the R scripts we require for running the data analysis on the Lindo2016 ancient damage data.
+
+```{r echo=TRUE, eval=TRUE}
 Rcpp::sourceCpp("../../flashr/src/cloglik.cpp")
 Rcpp::sourceCpp(("../../flashr/src/ATM.cpp"))
 source("../../flashr/R/flash.R")
@@ -13,11 +21,24 @@ source("../../flashr/R/greedy.R")
 source("../../flashr/R/FactorGGBar.R")
 source("../../flashr/R/FactorGGplot.R")
 source("../../flashr/R/flash_factor_postprocess.R")
+
+## the above scripts will eventually be part of flashr package
+
+
 source("../R/visDMsignature.R")
+
+## will eventually be part of the damage signature package
+
+##  The libraries we need 
+
 library(CountClust)
 library(ggplot2)
 library(pmsignature)
+```
 
+Some helper functions we need 
+
+```{r echo=TRUE, eval=TRUE}
 gsub2 <- function(pattern, replacement, x, ...) {
   for(i in 1:length(pattern))
     x <- gsub(pattern[i], replacement[i], x, ...)
@@ -25,14 +46,36 @@ gsub2 <- function(pattern, replacement, x, ...) {
 }
 ```
 
-Load the Lindo 2016 Ancient Damage data
+## Data Loading + Preprocessing 
+
+Load the Lindo 2016 Ancient Damage data. We consider first the exploratory results with the C to T damage, which is a known pattern of damage of ancient DNA over modern DNA, included.
+
+Read the counts data of the damage signatures for each sample (modern or ancient).
 
 ```{r echo=TRUE, eval=TRUE}
 signature_counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016.rda"))
 
 signature_set <- colnames(signature_counts)
 
+## dimensions of data: nrows=number of samples 
+## ncols = number of damage/mutation signatures
+
+print(dim(signature_counts))
+
+## the top corner of the counts matrix
+
+signature_counts[1:5,1:5]
+```
+
+We create signature pattern lists and matrices to be used later for plotting and exploration.
+
+```{r}
+
+## create a list of damage or mutation signatures
+
 sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
+
+## convert the bases to numbers
 
 site_left_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,1])
 site_left_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,2])
@@ -44,10 +87,14 @@ sub_pattern <- sapply(1:dim(sig_split)[1], function(x) paste(sig_split[x,3:6], c
 from = c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
 to = c(1,2,3,4,5,6)
 
+## pattern of bases matrix
+
 substitute <- gsub2(from, to, sub_pattern)
 
 mutation_features <- sapply(1:dim(sig_split)[1], 
                                    function(m) paste0(substitute[m], ",", site_left_2[m], ",", site_left_1[m], ",", site_right_1[m], ",", site_right_2[m]))
+
+## matrix of mutation or damage features
 
 mut_features_mat <- data.frame(cbind(substitute, site_left_2, site_left_1, site_right_1, site_right_2))
 rownames(mut_features_mat) <- mutation_features
@@ -56,18 +103,9 @@ mut_features_mat <- as.matrix(apply(mut_features_mat, c(1,2), function(x) as.num
 
 ```
 
-We briefly explore the data summary.
+## with C to T data analysis
 
-```{r echo=TRUE, eval=TRUE}
-## dimensions of data: nrows=number of samples 
-## ncols = number of damage/mutation signatures
-
-print(dim(signature_counts))
-
-## the top corner of the counts matrix
-
-signature_counts[1:5,1:5]
-```
+### log CPM transformation
 
 We convert the counts data to log CPM data by the `limma::voom` transformation.
 
@@ -80,10 +118,13 @@ voom_signature_counts <- t(limma::voom(t(signature_counts))$E);
 
 voom_weights <- t(limma::voom(t(signature_counts))$weights);
 
+## save the voom signature counts 
+
 write.table(voom_signature_counts, file="../../sfa_seq/sfa_inputs/sfa_input_voom_sig_with_CtoT_lindo2016.txt", row.names=FALSE,col.names=FALSE, quote=FALSE, sep="\t")
 
 ```
 
+We start the exploratory analysis of the ancient damage data by applying the Principal Component Analysis (PCA).
 
 ### Principal Component Analysis
 
@@ -120,7 +161,7 @@ do.call("grid.arrange",
 
 ```
 
-## Exploring substitution patterns 
+### Barchart of substitution patterns 
 
 ```{r}
 sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
@@ -155,23 +196,112 @@ StructureGGplot(omega = prop_substitute_sig,
 
 ```
 
+### Factor Loadings Results (type-known)
+
 We now load the FLASH results for the data.
 
-```{r echo=TRUE, eval=FALSE}
+```{r echo=TRUE, eval=TRUE}
 ll <- flashpool(voom_signature_counts, K=10, 
                  tol=1e-3, maxiter_r1 = 100,
-                 partype="constant", 
+                 partype="known",
+                 sigmae2_true = 1/(voom_weights),
                  nonnegative=FALSE)
 
-save(ll, file="../rda/greedy_flash_voom_signature_Lindo2016.rda")
 ```
 
 ```{r echo=TRUE, eval=TRUE}
-ll <- get(load("../rda/greedy_flash_voom_signature_Lindo2016.rda"))
-
 postprocess_ll <- flash_factor_postprocess(ll$l,ll$f, voom_signature_counts)
 pve_percentage <- c("", paste0(": PVE : ", round(postprocess_ll$PVE*100,1), "%"))
+zero_pve <- max(which(postprocess_ll$PVE > 0))
+ll$l <- ll$l[,1:(1+zero_pve)]
+ll$f <- ll$f[,1:(1+zero_pve)]
+```
 
+```{r}
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(ll$l))),
+  label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(ll$l) <- paste0("X", c(1:NROW(ll$l)));
+
+FactorGGBar(loadings = ll$l,
+            annotation = annotation,
+            palette = list("mid"="white", 
+                           "low"="red", 
+                           "high"="blue", 
+                           "midpoint"=0),
+             yaxis_label = "Population Type",
+             figure_title = " ",
+             axis_tick = list(axis_ticks_length = .1,
+                              axis_ticks_lwd_y = .1,
+                              axis_ticks_lwd_x = .1,
+                              axis_label_size = 7,
+                              axis_label_face = "bold"),
+            legend_labels = pve_percentage[1:(zero_pve+1)],
+            scale=TRUE,
+            panel=list(panel_rows=2,
+                       panel_title="greedy FLASH Factor Loadings Bar plot (with C to T)",
+                       panel_title_fontsize=10,
+                       panel_title_font=3))
+
+```
+
+```{r}
+FactorGGplot(loadings = ll$l[,-1],
+             annotation = annotation,
+             palette = c( RColorBrewer::brewer.pal(8, "Accent"),
+                          RColorBrewer::brewer.pal(4, "Spectral")),
+             figure_title = "greedy FLASH Factor loadings stacked barchart (with C to T)",
+             yaxis_label = "Factor type",
+             order_sample = FALSE,
+             sample_order_decreasing = FALSE,
+             split_line = list(split_lwd = 0.2,
+                               split_col = "black"),
+             plot_labels = TRUE,
+             legend_labels = pve_percentage[-1],
+             scale=FALSE,
+             axis_tick = list(axis_ticks_length = .1,
+                              axis_ticks_lwd_y = .1,
+                              axis_ticks_lwd_x = .1,
+                              axis_label_size = 3,
+                              axis_label_face = "bold"))
+
+```
+
+```{r}
+rownames(ll$f) <- signature_set
+ll_f_scale <- apply(ll$f[,-1],2,function(x) 
+                                  {
+                                      if(sd(x)!=0) {return (x/sd(x))}
+                                      else {return (x)}
+    })
+
+normalize <- function(x) { return (x/sum(x))}
+
+abs_f_scale <- apply(ll_f_scale,2,function(x) normalize(abs(x)))
+indices <- CountClust::ExtractTopFeatures(abs_f_scale, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+### Factor Loadings Results (with type-constant)
+
+We now load the FLASH results for the data.
+
+```{r echo=TRUE, eval=TRUE}
+ll <- flashpool(voom_signature_counts, K=10, 
+                 tol=1e-3, maxiter_r1 = 100,
+                 partype="constant",
+                 nonnegative=FALSE)
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+postprocess_ll <- flash_factor_postprocess(ll$l,ll$f, voom_signature_counts)
+pve_percentage <- c("", paste0(": PVE : ", round(postprocess_ll$PVE*100,1), "%"))
 ```
 
 ```{r}
@@ -245,7 +375,7 @@ imp_features
 
 ```
 
-## Sparse Factor Analysis
+### Sparse Factor Analysis
 
 We now apply SFA and compare the results.
 
@@ -336,9 +466,9 @@ imp_features
 
 ```
 
-## Penalized Matrix Decomposition
+### Penalized Matrix Decomposition
 
-```{r echo=TRUE, eval=FALSE}
+```{r echo=TRUE, eval=TRUE}
 ll_pmd <- PMA::PMD(voom_signature_counts, 
                type="standard",
                K=10)
@@ -420,13 +550,13 @@ imp_features
 ```
 
 
-## CountCluster application
+### CountCluster application
 
 ```{r}
 topics_clus <- get(load("../rda/CountClust_output_Lindo2016_with_C_to_T.rda"))
 ```
 
-### K=2
+#### K=2
 
 ```{r}
 theta <- topics_clus$clust_2$theta;
@@ -500,7 +630,7 @@ apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="mi
 ```
 
 
-### K=3
+#### K=3
 
 ```{r}
 theta <- topics_clus$clust_3$theta;
@@ -572,7 +702,7 @@ apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="mi
 
 ```
 
-### K=4
+#### K=4
 
 ```{r}
 theta <- topics_clus$clust_4$theta;
@@ -646,6 +776,10 @@ apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="mi
 
 ```
 
+### Conditional Damage results (CountCluster)
+
+We also perform conditional damage signatures for $K=3$.
+
 ```{r}
 theta <- topics_clus$clust_3$theta;
 omega <- topics_clus$clust_3$omega
@@ -659,9 +793,534 @@ flankingBasesNum = as.integer(numBases)
 trDir <- FALSE
 fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
 
-visDMSignature (theta, pattern,
-                sample_names,numBases, flankingBasesNum,
-                trDir, fdim, title_size=10,   panel_title_size=10, panel_title_font=4, layout=c(6,1))
+index_sub <- c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+
+visDMSignature (theta, 
+                index_sub,
+                pattern=sub_pattern,
+                mutation_features_matrix = mut_features_mat,
+                sample_names,
+                flankingBasesNum=as.integer(numBases),
+                trDir, 
+                fdim, 
+                title_size=10,   
+                panel_title_size=10, 
+                panel_title_font=4, 
+                layout=c(6,1))
+```
+
+## Damage results after removing C -> T 
+
+```{r}
+indices <- which(sig_split[,3]=="C" & sig_split[,6]=="T")
+signature_counts_noCtoT <- signature_counts[,-indices];
+signature_set_noCtoT <- signature_set[-indices];
+substitute_sig_noCtoT <- substitute_sig[-indices];
+
+sig_split_noCtoT <- sig_split[-indices,];
+
+sub_pattern_noCtoT <- sub_pattern[-indices];
+mut_features_mat_noCtoT <- mut_features_mat[-indices,];
+
+
+voom_signature_counts_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$E);
+
+### track the voom weights 
+
+voom_weights_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$weights);
 
 ```
 
+### Principal Component Analysis
+
+```{r echo=FALSE, eval=TRUE}
+pr <- prcomp(voom_signature_counts_noCtoT)
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                            "labels"=c(rep("Ancient",25),
+                                       rep("Modern",25)))
+
+graphList <- vector(mode="list");
+library(ggplot2)
+
+
+graphList[[1]] <- qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[2]] <-qplot(PC.PC1, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[3]] <-qplot(PC.PC2, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 2,
+                      nrow = 2))
+
+
+```
+
+### Exploring substitution patterns 
+
+```{r}
+normalize <- function(x) return(x/sum(x))
+prop_substitute_sig_noCtoT <- do.call(rbind, 
+          lapply(1:dim(signature_counts_noCtoT)[1], function(x) 
+          normalize(tapply(signature_counts_noCtoT[x,], substitute_sig_noCtoT, sum))))
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(prop_substitute_sig_noCtoT))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(prop_substitute_sig_noCtoT) <- annotation$sample_id;
+
+StructureGGplot(omega = prop_substitute_sig_noCtoT,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: 6 substitution patterns (without C -> T)"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+```
+
+### Factor analysis  (FLASH type="constant")
+
+```{r}
+ll <- flashpool(voom_signature_counts_noCtoT, K=10, 
+                 tol=1e-3, maxiter_r1 = 100,
+                 partype="constant",
+                 nonnegative=FALSE)
+
+postprocess_ll <- flash_factor_postprocess(ll$l,ll$f, voom_signature_counts_noCtoT)
+pve_percentage <- c("", paste0(": PVE : ", round(postprocess_ll$PVE*100,1), "%"))
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(ll$l))),
+  label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(ll$l) <- annotation$sample_id;
+
+```
+
+```{r echo=TRUE, eval=FALSE}
+
+FactorGGBar(loadings = ll$l,
+            annotation = annotation,
+            palette = list("mid"="white", 
+                           "low"="red", 
+                           "high"="blue", 
+                           "midpoint"=0),
+             yaxis_label = "Population Type",
+             figure_title = " ",
+             axis_tick = list(axis_ticks_length = .1,
+                              axis_ticks_lwd_y = .1,
+                              axis_ticks_lwd_x = .1,
+                              axis_label_size = 7,
+                              axis_label_face = "bold"),
+            legend_labels = pve_percentage,
+            scale=TRUE,
+            panel=list(panel_rows=2,
+                       panel_title="greedy FLASH Factor Loadings Bar plot (without C to T)",
+                       panel_title_fontsize=10,
+                       panel_title_font=3))
+
+```
+
+```{r}
+FactorGGplot(loadings = ll$l[,-1],
+             annotation = annotation,
+             palette = c( RColorBrewer::brewer.pal(8, "Accent"),
+                          RColorBrewer::brewer.pal(4, "Spectral")),
+             figure_title = "greedy FLASH Factor loadings stacked barchart (without C to T)",
+             yaxis_label = "Factor type",
+             order_sample = FALSE,
+             sample_order_decreasing = TRUE,
+             split_line = list(split_lwd = 0.2,
+                               split_col = "black"),
+             plot_labels = TRUE,
+             legend_labels = pve_percentage[-1],
+             scale=TRUE,
+             axis_tick = list(axis_ticks_length = .1,
+                              axis_ticks_lwd_y = .1,
+                              axis_ticks_lwd_x = .1,
+                              axis_label_size = 3,
+                              axis_label_face = "bold"))
+
+```
+
+```{r}
+rownames(ll$f) <- signature_set_noCtoT
+ll_f_scale <- apply(ll$f,2,function(x) 
+                                  {
+                                      if(sd(x)!=0) {return (x/sd(x))}
+                                      else {return (x)}
+    })
+
+normalize <- function(x) { return (x/sum(x))}
+
+abs_f_scale <- apply(ll$f,2,function(x) normalize(abs(x)))
+indices <- CountClust::ExtractTopFeatures(abs_f_scale, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+### Factor analysis  (FLASH type="known")
+
+```{r}
+ll <- flashpool(voom_signature_counts_noCtoT, K=10, 
+                 tol=1e-3, maxiter_r1 = 100,
+                 partype="known",
+                 sigmae2_true = 1/(voom_weights_noCtoT),
+                 nonnegative=FALSE)
+
+
+postprocess_ll <- flash_factor_postprocess(ll$l,ll$f, voom_signature_counts_noCtoT)
+pve_percentage <- c("", paste0(": PVE : ", round(postprocess_ll$PVE*100,1), "%"))
+
+zero_pve <- max(which(postprocess_ll$PVE > 0))
+ll$l <- ll$l[,1:(1+zero_pve)]
+ll$f <- ll$f[,1:(1+zero_pve)]
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(ll$l))),
+  label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(ll$l) <- annotation$sample_id;
+
+```
+
+```{r echo=FALSE, eval=FALSE}
+FactorGGBar(loadings = ll$l,
+            annotation = annotation,
+            palette = list("mid"="white", 
+                           "low"="red", 
+                           "high"="blue", 
+                           "midpoint"=0),
+             yaxis_label = "Population Type",
+             figure_title = " ",
+             axis_tick = list(axis_ticks_length = .1,
+                              axis_ticks_lwd_y = .1,
+                              axis_ticks_lwd_x = .1,
+                              axis_label_size = 7,
+                              axis_label_face = "bold"),
+            legend_labels = pve_percentage[1:(1+zero_pve)],
+            scale=TRUE,
+            panel=list(panel_rows=2,
+                       panel_title="greedy FLASH Factor Loadings Bar plot (without C to T)",
+                       panel_title_fontsize=10,
+                       panel_title_font=3))
+
+```
+
+```{r}
+FactorGGplot(loadings = ll$l[,-1],
+             annotation = annotation,
+             palette = c( RColorBrewer::brewer.pal(8, "Accent"),
+                          RColorBrewer::brewer.pal(4, "Spectral")),
+             figure_title = "greedy FLASH Factor loadings stacked barchart (without C to T)",
+             yaxis_label = "Factor type",
+             order_sample = FALSE,
+             sample_order_decreasing = TRUE,
+             split_line = list(split_lwd = 0.2,
+                               split_col = "black"),
+             plot_labels = TRUE,
+             legend_labels = pve_percentage[-1],
+             scale=TRUE,
+             axis_tick = list(axis_ticks_length = .1,
+                              axis_ticks_lwd_y = .1,
+                              axis_ticks_lwd_x = .1,
+                              axis_label_size = 3,
+                              axis_label_face = "bold"))
+
+```
+
+```{r}
+rownames(ll$f) <- signature_set_noCtoT
+ll_f_scale <- apply(ll$f,2,function(x) 
+                                  {
+                                      if(sd(x)!=0) {return (x/sd(x))}
+                                      else {return (x)}
+    })
+
+normalize <- function(x) { return (x/sum(x))}
+
+abs_f_scale <- apply(ll$f,2,function(x) normalize(abs(x)))
+indices <- CountClust::ExtractTopFeatures(abs_f_scale, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+### CountCluster application
+
+```{r}
+topics_clus <- get(load("../rda/CountClust_output_Lindo2016_without_C_to_T.rda"))
+```
+
+#### K=2
+
+```{r}
+theta <- topics_clus$clust_2$theta;
+omega <- topics_clus$clust_2$omega
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+sample_names <- rownames(signature_counts_noCtoT)
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 2))
+
+omega <- slot(Param, "sampleSignatureDistribution")
+library(CountClust)
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_noCtoT[x])
+
+
+```
+
+
+#### K=3
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts_noCtoT)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 3))
+
+omega <- slot(Param, "sampleSignatureDistribution")
+library(CountClust)
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_noCtoT[x])
+
+
+```
+
+#### K=4
+
+```{r}
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts_noCtoT)
+
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+graphList[[4]] <- visPMSignature(Param, 4)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 2,
+                      nrow = 2))
+
+omega <- slot(Param, "sampleSignatureDistribution")
+library(CountClust)
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: without C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_noCtoT[x])
+
+
+```
+
+### Conditional Damage results (CountCluster)
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+sample_names <- rownames(signature_counts_noCtoT)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+
+index_sub <- c("C->A", "C->G", "T->A", "T->C", "T->G")
+visDMSignature (theta, 
+                index_sub,
+                pattern=sub_pattern_noCtoT,
+                mutation_features_matrix = mut_features_mat_noCtoT,
+                sample_names,
+                flankingBasesNum=as.integer(numBases),
+                trDir, 
+                fdim, 
+                title_size=10,   
+                panel_title_size=10, 
+                panel_title_font=4, 
+                layout=c(5,1))
+
+```
