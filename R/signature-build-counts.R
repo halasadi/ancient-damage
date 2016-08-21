@@ -72,7 +72,7 @@ indices <- union(indices1, indices2)
 
 signature_counts_data_pooled_filtered <- signature_counts_data_pooled[,-indices]
 
-sig_split <- do.call(rbind, lapply(colnames(signature_counts_data_pooled_filtered), function(x) strsplit(as.character(x), split="")[[1]]))
+#sig_split <- do.call(rbind, lapply(colnames(signature_counts_data_pooled_filtered), function(x) strsplit(as.character(x), split="")[[1]]))
 # which(temp[,3]==temp[,6])
 
 #save(signature_counts_data_pooled_filtered,
