@@ -40,7 +40,7 @@ if __name__ == '__main__':
     for chr in chrs:
         for read in samfile.fetch(chr):
             NM = read.get_tag('NM')
-            if (NM == 0):
+            if (NM == 0 or (read.mapping_quality < 30)):
                 continue
             seq = read.seq
             aligned_pairs = read.get_aligned_pairs(with_seq=True)
@@ -52,6 +52,7 @@ if __name__ == '__main__':
                 # need to check if they are of the same length
                 if (len(quality_scores) != len(aligned_pairs)):
                     continue
+
                 # throw away mutation on the first and last two base pairs
                 if (mut == 'N' or quality_scores[ind] < MIN_BQ_SCORE or ind < 2 or ind > (len(seq)-3) or ind < read.qstart or ind > read.qend):
                     continue
