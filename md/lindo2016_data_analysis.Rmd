@@ -241,7 +241,7 @@ FactorGGBar(loadings = ll$l,
 ```
 
 ```{r}
-FactorGGplot(loadings = ll$l[,-1],
+FactorGGStack(loadings = ll$l[,-1],
              annotation = annotation,
              palette = c( RColorBrewer::brewer.pal(8, "Accent"),
                           RColorBrewer::brewer.pal(4, "Spectral")),
@@ -259,6 +259,8 @@ FactorGGplot(loadings = ll$l[,-1],
                               axis_ticks_lwd_x = .1,
                               axis_label_size = 3,
                               axis_label_face = "bold"))
+
+
 
 ```
 
