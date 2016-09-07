@@ -1,0 +1,38 @@
+import os
+
+ANCIENT_SAMPLES = ['125_all_chr', '158_all_chr', '163_all_chr', '167_all_chr',
+           '168_all_chr', '181_all_chr', '300_all_chr', '302_all_chr',
+           '311_all_chr', '318_all_chr', '322_all_chr', '357_all_chr',
+           '365_all_chr', '386_all_chr', '406_all_chr', '412_all_chr',
+            '413_all_chr', '443_all_chr', '468_all_chr', '470_all_chr',
+            '507_all_chr', '516_all_chr', '525_all_chr', '532_all_chr',
+            '939_all_chr']
+
+MODERN_SAMPLES = ['S001_all_chr', 'S002_all_chr', 'T004_all_chr', 'T008_all_chr',
+                  't012_all_chr', 'T015_all_chr', 't018_all_chr', 't023_all_chr',
+                  't024_all_chr', 't026_all_chr', 't028_all_chr', 't036_all_chr',
+                  't052_all_chr', 't054_all_chr', 't055_all_chr','t057_all_chr', 
+                  't058_all_chr', 't059_all_chr', 't060_all_chr', 't061_all_chr', 
+                  't066_all_chr', 't067_all_chr', 't200_all_chr', 't201_all_chr', 
+                  't202_all_chr']
+
+workdir: "/mnt/gluster/data/external_public_supp/Ancient_DNA_Data/Lindo_2016"
+
+
+rule all:
+    input:
+        expand('csv/{sample}.q30.csv', sample = ANCIENT_SAMPLES),
+        expand('csv/{sample}.q30.csv', sample = MODERN_SAMPLES)
+    
+rule call_damage:
+    input:
+        bam = 'data/filtered/{sample}.q30.bam',
+        bai = 'data/filtered/{sample}.q30.bam.bai',
+        ref = 'data/reference/hg19_CHR.fa'
+    output:
+        'csv/{sample}.q30.csv'
+    params:
+        nflanking = '3'
+    shell:
+        'python bin/generate_summary_data_reference.py -bf {input.bam} -ff {input.ref} -n {params.nflanking} -o {output}'
+

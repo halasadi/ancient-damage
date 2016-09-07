@@ -57,7 +57,7 @@ if __name__ == '__main__':
                     patternsDict[patt] = 1
 
     # write to file
-    with open(args.out + '.csv', 'wb') as csv_file:
+    with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
             writer.writerow([key, value])
