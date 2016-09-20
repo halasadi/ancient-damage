@@ -1,0 +1,141 @@
+---
+title: "SVM"
+author: "Hussein Al-Asadi"
+output: 
+  html_document:
+    css: floating-toc.css
+    toc: true
+---
+
+
+```{r, echo =FALSE}
+library("e1071")
+
+signature.counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016-3.rda"))
+signature.set <- colnames(signature.counts)
+sig.split <- do.call(rbind, lapply(colnames(signature.counts), function(x) strsplit(as.character(x), split="")[[1]]))
+```
+
+
+### helper functions
+
+Note for the SVM, we use 30 for training and 20 for test.
+```{r}
+plotpca <- function(voom.signature.counts.filtered){
+  pr <- prcomp(voom.signature.counts.filtered)
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                            "labels"=c(rep("Ancient",25),
+                                       rep("Modern",25)))
+
+graphList <- vector(mode="list");
+library(ggplot2)
+
+
+graphList[[1]] <- qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[2]] <-qplot(PC.PC1, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[3]] <-qplot(PC.PC2, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 2,
+                      nrow = 2))
+}
+
+dosvm <- function(nreps, voom.signature.counts.filtered){
+  labels <- as.factor(c(rep("A", 25), rep("M", 25)))
+  success.prob = rep(0, nreps)
+  for (i in 1:nreps){
+    sub <- c(sample(25, 15), sample(26:50, 15))
+    x <- voom.signature.counts.filtered[sub,]
+    y <- labels[sub]
+    model <- svm(x,y)
+    pred <- predict(model, voom.signature.counts.filtered[-sub,])
+    success.prob[i] <- sum(diag(table(pred, labels[-sub])))/sum(table(pred, labels[-sub]))
+  }
+  return(success.prob)
+}
+
+
+```
+
+
+### 3 flanking
+```{r, echo =FALSE}
+indices <- which(sig.split[,4] == "C" & sig.split[,7] == "T")
+indices <- c(indices, which(sig.split[,4] == "C" & sig.split[,7] == "A"))#, which(sig.split[,4] == "T" & sig.split[,7] == "A"), which(sig.split[,4] == "T" & sig.split[,7] == "C"), which(sig.split[,4] == "T" & sig.split[,7] == "G"))
+signature.counts.filtered <- signature.counts[,-indices];
+voom.signature.counts.filtered <- t(limma::voom(t(signature.counts.filtered))$E);
+voom.weights.filtered <- t(limma::voom(t(signature.counts.filtered))$weights);
+success.prob = dosvm(100, voom.signature.counts.filtered)
+hist(success.prob, 10, main = paste0("3 flanking, mean=", mean(success.prob)))
+plotpca(voom.signature.counts.filtered)
+```
+
+
+### 2 flanking base pairs
+```{r, echo = FALSE}
+labels <- apply(sig.split[,2:9], 1, function(x) return(paste0(x, collapse="")))
+signature.counts.reduced <- t(aggregate(t(signature.counts), by = list(labels), sum))
+colnames(signature.counts.reduced) = signature.counts.reduced[1,]
+signature.counts.reduced <- signature.counts.reduced[-1,]
+signature.counts.reduced <- apply(signature.counts.reduced, c(1,2), function(x) as.numeric(x))
+
+sig.split.reduced = do.call(rbind, lapply(colnames(signature.counts.reduced), function(x) strsplit(as.character(x), split="")[[1]]))
+indices <- which(sig.split.reduced[,3] == "C" & sig.split.reduced[,6] == "T")
+indices <- c(indices, which(sig.split.reduced[,3] == "C" & sig.split.reduced[,6] == "A"))#, which(sig.split.reduced[,3] == "T" & sig.split.reduced[,6] == "A"), which(sig.split.reduced[,3] == "T" & sig.split.reduced[,6] == "C"), which(sig.split.reduced[,3] == "T" & sig.split.reduced[,6] == "G"))
+signature.counts.filtered <- signature.counts.reduced[,-indices];
+voom.signature.counts.filtered <- t(limma::voom(t(signature.counts.filtered))$E);
+voom.weights.filtered <- t(limma::voom(t(signature.counts.filtered))$weights);
+success.prob = dosvm(100, voom.signature.counts.filtered)
+hist(success.prob, 10, main = paste0("2 flanking, mean=", mean(success.prob)))
+plotpca(voom.signature.counts.filtered)
+```
+
+### 1 flanking base pairs
+```{r, echo = FALSE}
+labels <- apply(sig.split[,3:8], 1, function(x) return(paste0(x, collapse="")))
+signature.counts.reduced <- t(aggregate(t(signature.counts), by = list(labels), sum))
+colnames(signature.counts.reduced) = signature.counts.reduced[1,]
+signature.counts.reduced <- signature.counts.reduced[-1,]
+signature.counts.reduced <- apply(signature.counts.reduced, c(1,2), function(x) as.numeric(x))
+
+sig.split.reduced = do.call(rbind, lapply(colnames(signature.counts.reduced), function(x) strsplit(as.character(x), split="")[[1]]))
+indices <- which(sig.split.reduced[,2] == "C" & sig.split.reduced[,5] == "T")
+indices <- c(indices, which(sig.split.reduced[,2] == "C" & sig.split.reduced[,5] == "A"))#, which(sig.split.reduced[,2] == "T" & sig.split.reduced[,5] == "A"), which(sig.split.reduced[,2] == "T" & sig.split.reduced[,5] == "C"), which(sig.split.reduced[,2] == "T" & sig.split.reduced[,5] == "G"))
+signature.counts.filtered <- signature.counts.reduced[,-indices];
+voom.signature.counts.filtered <- t(limma::voom(t(signature.counts.filtered))$E);
+voom.weights.filtered <- t(limma::voom(t(signature.counts.filtered))$weights);
+success.prob = dosvm(100, voom.signature.counts.filtered)
+hist(success.prob, 10, main = paste0("one flanking,vmean=", mean(success.prob)))
+plotpca(voom.signature.counts.filtered)
+```
+
+### 0 flanking base pairs
+```{r, echo = FALSE}
+labels <- apply(sig.split[,4:7], 1, function(x) return(paste0(x, collapse="")))
+signature.counts.reduced <- t(aggregate(t(signature.counts), by = list(labels), sum))
+colnames(signature.counts.reduced) = signature.counts.reduced[1,]
+signature.counts.reduced <- signature.counts.reduced[-1,]
+signature.counts.reduced <- apply(signature.counts.reduced, c(1,2), function(x) as.numeric(x))
+
+sig.split.reduced = do.call(rbind, lapply(colnames(signature.counts.reduced), function(x) strsplit(as.character(x), split="")[[1]]))
+indices <- which(sig.split.reduced[,1] == "C" & sig.split.reduced[,4] == "T")
+indices <- c(indices, which(sig.split.reduced[,1] == "C" & sig.split.reduced[,4] == "A"))#, which(sig.split.reduced[,1] == "T" & sig.split.reduced[,4] == "A"), which(sig.split.reduced[,1] == "T" & sig.split.reduced[,4] == "C"), which(sig.split.reduced[,1] == "T" & sig.split.reduced[,4] == "G"))
+signature.counts.filtered <- signature.counts.reduced[,-indices];
+voom.signature.counts.filtered <- t(limma::voom(t(signature.counts.filtered))$E);
+voom.weights.filtered <- t(limma::voom(t(signature.counts.filtered))$weights);
+success.prob = dosvm(100, voom.signature.counts.filtered)
+hist(success.prob, 10, main = paste0("no flanking, mean=", mean(success.prob)))
+#plotpca(voom.signature.counts.filtered)
+```

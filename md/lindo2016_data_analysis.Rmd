@@ -14,17 +14,7 @@ output:
 We load the packages and source the R scripts we require for running the data analysis on the Lindo2016 ancient damage data.
 
 ```{r echo=TRUE, eval=TRUE}
-Rcpp::sourceCpp("../../flashr/src/cloglik.cpp")
-Rcpp::sourceCpp(("../../flashr/src/ATM.cpp"))
-source("../../flashr/R/flash.R")
-source("../../flashr/R/greedy.R")
-source("../../flashr/R/FactorGGBar.R")
-source("../../flashr/R/FactorGGplot.R")
-source("../../flashr/R/flash_factor_postprocess.R")
-
 ## the above scripts will eventually be part of flashr package
-
-
 source("../R/visDMsignature.R")
 
 ## will eventually be part of the damage signature package
@@ -34,6 +24,7 @@ source("../R/visDMsignature.R")
 library(CountClust)
 library(ggplot2)
 library(pmsignature)
+library(flashr)
 ```
 
 Some helper functions we need 
@@ -153,10 +144,12 @@ graphList[[3]] <-qplot(PC.PC2, PC.PC3,
 
 library(grid)
 library(gridExtra)
-do.call("grid.arrange", 
-          args = list(grobs=graphList,
-                      ncol = 2,
-                      nrow = 2))
+a <- do.call("grid.arrange", 
+               args = list(grobs=graphList,
+                            ncol = 2,
+                            nrow = 2))
+
+
 
 
 ```
@@ -248,7 +241,7 @@ FactorGGBar(loadings = ll$l,
 ```
 
 ```{r}
-FactorGGplot(loadings = ll$l[,-1],
+FactorGGStack(loadings = ll$l[,-1],
              annotation = annotation,
              palette = c( RColorBrewer::brewer.pal(8, "Accent"),
                           RColorBrewer::brewer.pal(4, "Spectral")),
@@ -266,6 +259,8 @@ FactorGGplot(loadings = ll$l[,-1],
                               axis_ticks_lwd_x = .1,
                               axis_label_size = 3,
                               axis_label_face = "bold"))
+
+
 
 ```
 

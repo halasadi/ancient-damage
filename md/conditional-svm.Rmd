@@ -1,0 +1,87 @@
+---
+title: "SVM, using conditionally independent data"
+author: "Hussein Al-Asadi"
+output: 
+  html_document:
+    css: floating-toc.css
+    toc: true
+---
+
+
+```{r, echo =FALSE, eval=FALSE}
+signature.counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016-3.rda"))
+signature.set <- colnames(signature.counts)
+sig.split <- do.call(rbind, lapply(colnames(signature.counts), function(x) strsplit(as.character(x), split="")[[1]]))
+```
+
+
+### helper functions
+
+Note for the SVM, we use 20 for training and 30 for test.
+```{r}
+dosvm <- function(nreps, voom.signature.counts.filtered){
+  labels <- as.factor(c(rep("A", 25), rep("M", 25)))
+  success.prob = rep(0, nreps)
+  for (i in 1:nreps){
+    sub <- c(sample(25, 10), sample(26:50, 10))
+    x <- voom.signature.counts.filtered[sub,]
+    y <- labels[sub]
+    model <- svm(x,y)
+    pred <- predict(model, voom.signature.counts.filtered[-sub,])
+    success.prob[i] <- sum(diag(table(pred, labels[-sub])))/sum(table(pred, labels[-sub]))
+  }
+  return(success.prob)
+}
+
+
+```
+
+
+```{r, echo =FALSE, eval = FALSE}
+mut.sigs <- c("C->T", "T->A", "T->C", "C->G", "C->A", "T->G")
+positions <- c(1, 2, 3, 8, 9, 10)
+nucs <- c("A", "G", "C", "T")
+patterns <- vector()
+
+
+for (i in 1:length(mut.sigs)){
+  mut.sig <- mut.sigs[i]
+  for (j in 1:length(positions)){
+    pos <- positions[j]
+    for (k in 1:length(nucs)){
+      patt <- paste0(mut.sig, ",", pos, ",", nucs[k])
+      patterns <- append(patterns, patt)
+    }
+  } 
+}
+
+
+df = data.frame(matrix(0, 50, ncol = length(patterns)))
+colnames(df) = patterns
+
+for (i in 1:50){
+  for (j in 1:length(patterns)){
+    labs = strsplit(patterns[j], ",")[[1]]
+    mut.sig <- labs[1]
+    pos <- strtoi(labs[2])
+    nuc <- labs[3]
+    inds <- which(sig.split[,4] == substr(mut.sig, 1, 1) & sig.split[,7] == substr(mut.sig, 4, 4) & sig.split[,pos] == nuc)
+    df[i, j] = sum(signature.counts[i, inds])
+  }
+}
+
+save(df, file="../summary_data/signature-counts-conditional-clubbed-Lindo2016.rda")
+```
+
+
+```{r}
+library("e1071")
+
+signature.counts <- get(load("../summary_data/signature-counts-conditional-clubbed-Lindo2016.rda"))
+sig.split <- do.call(rbind, lapply(colnames(signature.counts), function(x) strsplit(as.character(x), split=",")[[1]]))
+signature.counts <- signature.counts[,-c(which(sig.split[,1] == "C->T"), which(sig.split[,1] == "C->A"))]
+voom.signature.counts <- t(limma::voom(t(signature.counts))$E);
+voom.weights<- t(limma::voom(t(signature.counts))$weights);
+success.prob = dosvm(100, voom.signature.counts)
+hist(success.prob, 10)
+```

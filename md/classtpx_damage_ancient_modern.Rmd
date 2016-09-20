@@ -1,0 +1,403 @@
+---
+title: "classtpx on Ancient vs Modern damage data"
+author: "Kushal K Dey"
+date: "September 15, 2016"
+output: 
+  html_document:
+    css: floating-toc.css
+    toc: true
+---
+
+In this script, we observe whether the supervised topic model approach on Moderns and Ancients pooled data, taking moderns as the base is effective in uncovering structure in moderns and ancients data.
+
+
+
+```{r}
+library(slam)
+library(maptpx)
+library(devtools)
+install_github("kkdey/classtpx")
+library(classtpx)
+library(CountClust)
+```
+
+## Loading signature counts data
+
+```{r}
+signature_counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016.rda"))
+signature_set <- colnames(signature_counts)
+
+sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
+
+```
+
+## classtpx with moderns fixed
+
+### K=2 
+
+Applying classtpx with moderns as the base cluster to form supervised topic models. Use K=2.
+
+```{r}
+class_labs <- rep(1,25)
+known_samples <- 26:50
+
+Topic_clus <- class_topics(
+  signature_counts, 
+  K=2, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.99,0.01),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+indices <- CountClust::ExtractTopFeatures(Topic_clus$theta, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+### K=3
+
+Use K=3.
+
+```{r}
+Topic_clus <- class_topics(
+  signature_counts, 
+  K=3, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.90,0.01, 0.01),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+indices <- CountClust::ExtractTopFeatures(Topic_clus$theta, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+## classtpx with a uniform cluster 
+
+### K=3
+
+We use $K=3$, with one cluster having equal probability in all damage signatures.
+
+```{r}
+Topic_clus <- class_topics(
+  signature_counts, 
+  K=3, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  optional_theta = rep(1/length(signature_set), length(signature_set)),
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.99,0.01,0.01),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+indices <- CountClust::ExtractTopFeatures(Topic_clus$theta, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+### K=4
+
+We perform $K=4$ with one cluster fixed to have equal probability on all damage patterns.
+
+```{r}
+Topic_clus <- class_topics(
+  signature_counts, 
+  K=4, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  optional_theta = rep(1/length(signature_set), length(signature_set)),
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.99,0.01,0.01,0.01),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+indices <- CountClust::ExtractTopFeatures(Topic_clus$theta, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set[x])
+
+imp_features
+
+```
+
+## Removing C to T
+We remove the  C to T substitutions, and then perform classtpx with moderns as the base population.
+
+```{r}
+indices <- which(sig_split[,3]=="C" & sig_split[,6]=="T")
+signature_counts_noCtoT <- signature_counts[,-indices];
+signature_set_noCtoT <- signature_set[-indices];
+```
+
+## classtpx with modern cluster
+
+### K=2
+
+```{r}
+
+class_labs <- rep(1,25)
+known_samples <- 26:50
+
+Topic_clus <- classtpx::class_topics(
+  signature_counts_noCtoT, 
+  K=2, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.5,0.5),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+```
+
+### K=3
+
+Now for K=3
+
+```{r}
+Topic_clus <- class_topics(
+  signature_counts_noCtoT, 
+  K=3, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.9999,0.001,0.001),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+indices <- CountClust::ExtractTopFeatures(Topic_clus$theta, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set_noCtoT[x])
+
+imp_features
+
+```
+
+## classtpx with uniform cluster
+
+### K=3
+
+Now we take one of the clusters to have equal weight on all damage signatures.
+We first take K=3.
+
+```{r}
+Topic_clus <- class_topics(
+  signature_counts_noCtoT, 
+  K=3, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  optional_theta = rep(1/length(signature_set_noCtoT), length(signature_set_noCtoT)),
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.9999,0.001,0.001),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+```
+
+### K=4
+
+We assume one of the clusters to have equal weight on all damage signatures
+Next we take K=4.
+
+```{r}
+Topic_clus <- class_topics(
+  signature_counts_noCtoT, 
+  K=4, 
+  known_samples = known_samples,
+  class_labs = class_labs,
+  method="theta.fix",
+  optional_theta = rep(1/length(signature_set_noCtoT), length(signature_set_noCtoT)),
+  shrink=FALSE,
+  tol=0.01,
+  prior_omega = c(0.99,0.01,0.01,0.01),
+  ord=FALSE)
+
+omega <- Topic_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Ancient",25), rep("Modern",25)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = "StructurePlot",
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+indices <- CountClust::ExtractTopFeatures(Topic_clus$theta, top_features=10, method="poisson", options="min")
+imp_features <- apply(indices, c(1,2), function(x) signature_set_noCtoT[x])
+
+imp_features
+
+```
+
