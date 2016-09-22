@@ -3,6 +3,8 @@
 
 signature_counts <- get(load("../summary_data/signature-counts-Lindo2016.rda"))
 
+signature_counts <- get(load("../summary_data/153-ancients-counts-table.rda"))
+
 signature_set <- colnames(signature_counts)
 
 gsub2 <- function(pattern, replacement, x, ...) {
@@ -46,10 +48,10 @@ signature_set_2 <- signature_set
 signature_set_2[indices] <- signatureclub(signature_set[indices])
 
 signature_counts_pooled <- do.call(rbind, lapply(1:dim(signature_counts)[1], function(x) tapply(signature_counts[x,], signature_set_2, sum)))
-
+rownames(signature_counts_pooled) <- rownames(signature_counts)
 temp_split <- do.call(rbind, lapply(colnames(signature_counts_pooled), function(x) strsplit(as.character(x), split="")[[1]]))
 
 which(temp_split[,3]=="G") ## should be NA
 which(temp_split[,3]=="A") ## should be NA
 
-save(signature_counts_pooled, file="../summary_data/signature-counts-clubbed-Lindo2016.rda")
+save(signature_counts_pooled, file="../summary_data/153-ancient-signature-counts-clubbed.rda")
