@@ -1,0 +1,429 @@
+---
+title: "153 ancients  + Lindo data pooled exploration"
+author: "Kushal K Dey"
+date: "September 21, 2016"
+output: html_document
+---
+
+```{r echo=TRUE, eval=TRUE}
+gsub2 <- function(pattern, replacement, x, ...) {
+  for(i in 1:length(pattern))
+    x <- gsub(pattern[i], replacement[i], x, ...)
+  x
+}
+```
+
+```{r}
+lindo_signature_counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016.rda"))
+
+ancients_signature_counts_I_RISE <- get(load("../summary_data/153-ancient-signature-counts-clubbed.rda"))
+
+
+merged_data <- rbind(lindo_signature_counts,
+                     ancients_signature_counts_I_RISE)
+
+signature_set <- colnames(merged_data)
+
+```
+
+```{r}
+sig_split <- do.call(rbind, lapply(colnames(merged_data), function(x) strsplit(as.character(x), split="")[[1]]))
+
+site_left_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,1])
+site_left_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,2])
+site_right_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,7])
+site_right_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,8])
+
+sub_pattern <- sapply(1:dim(sig_split)[1], function(x) paste(sig_split[x,3:6], collapse=""))
+
+from = c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+to = c(1,2,3,4,5,6)
+
+substitute <- gsub2(from, to, sub_pattern)
+
+mutation_features <- sapply(1:dim(sig_split)[1], 
+                                   function(m) paste0(substitute[m], ",", site_left_2[m], ",", site_left_1[m], ",", site_right_1[m], ",", site_right_2[m]))
+
+## matrix of mutation or damage features
+
+mut_features_mat <- data.frame(cbind(substitute, site_left_2, site_left_1, site_right_1, site_right_2))
+rownames(mut_features_mat) <- mutation_features
+colnames(mut_features_mat)=NULL
+mut_features_mat <- as.matrix(apply(mut_features_mat, c(1,2), function(x) as.numeric(x)))
+
+
+sig_split_red <- sig_split[,3:6];
+
+substitute_sig <- sapply(1:dim(sig_split_red)[1], function(x) paste0(sig_split_red[x,], collapse=""))
+
+normalize <- function(x) return(x/sum(x))
+prop_substitute_sig <- do.call(rbind, 
+          lapply(1:dim(merged_data)[1], function(x) 
+          normalize(tapply(merged_data[x,], substitute_sig, sum))))
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(prop_substitute_sig))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(prop_substitute_sig) <- annotation$sample_id;
+
+StructureGGplot(omega = prop_substitute_sig,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: 6 substituion patterns (with C -> T)"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+```
+
+```{r}
+voom_signature_counts <- t(limma::voom(t(merged_data))$E);
+voom_weights <- t(limma::voom(t(merged_data))$weights);
+
+pr <- prcomp(voom_signature_counts)
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                            "labels"=c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+
+graphList <- vector(mode="list");
+library(ggplot2)
+
+
+graphList[[1]] <- qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[2]] <-qplot(PC.PC1, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[3]] <-qplot(PC.PC2, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+library(grid)
+library(gridExtra)
+a <- do.call("grid.arrange", 
+               args = list(grobs=graphList,
+                            ncol = 2,
+                            nrow = 2))
+```
+
+Countclust application
+
+```{r}
+topics_clus <- maptpx::topics(merged_data, K=3, tol=0.1);
+save(topics_clus, file="../rda/topics-153-ancients-lindo-merged-k-3-countclust.rda")
+
+topics_clus <- maptpx::topics(merged_data, K=2, tol=0.1);
+save(topics_clus, file="../rda/topics-153-ancients-lindo-merged-k-2-countclust.rda")
+
+topics_clus <- maptpx::topics(merged_data, K=4, tol=0.1);
+save(topics_clus, file="../rda/topics-153-ancients-lindo-merged-k-4-countclust.rda")
+
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics-153-ancients-lindo-merged-k-2-countclust.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = TRUE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+
+```{r}
+topics_clus <- get(load("../rda/topics-153-ancients-lindo-merged-k-3-countclust.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = TRUE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics-153-ancients-lindo-merged-k-4-countclust.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = TRUE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+
+We remove the C to T substitutions 
+
+```{r}
+indices <- which(sig_split[,3]=="C" & sig_split[,6]=="T")
+signature_counts_noCtoT <- merged_data[,-indices];
+signature_set_noCtoT <- signature_set[-indices];
+substitute_sig_noCtoT <- substitute_sig[-indices];
+
+sig_split_noCtoT <- sig_split[-indices,];
+
+sub_pattern_noCtoT <- sub_pattern[-indices];
+mut_features_mat_noCtoT <- mut_features_mat[-indices,];
+
+
+voom_signature_counts_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$E);
+
+### track the voom weights 
+
+voom_weights_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$weights);
+
+```
+
+```{r echo=FALSE, eval=TRUE}
+pr <- prcomp(voom_signature_counts_noCtoT)
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                            "labels"=c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+
+graphList <- vector(mode="list");
+library(ggplot2)
+
+
+graphList[[1]] <- qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[2]] <-qplot(PC.PC1, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[3]] <-qplot(PC.PC2, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 2,
+                      nrow = 2))
+
+```
+
+```{r}
+normalize <- function(x) return(x/sum(x))
+prop_substitute_sig_noCtoT <- do.call(rbind, 
+          lapply(1:dim(signature_counts_noCtoT)[1], function(x) 
+          normalize(tapply(signature_counts_noCtoT[x,], substitute_sig_noCtoT, sum))))
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(prop_substitute_sig_noCtoT))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(prop_substitute_sig_noCtoT) <- annotation$sample_id;
+
+StructureGGplot(omega = prop_substitute_sig_noCtoT,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Development Phase",
+                order_sample = FALSE,
+                figure_title = paste0("StructurePlot: 6 substitution patterns (without C -> T)"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+```
+
+
+```{r}
+topics_clus <- maptpx::topics(signature_counts_noCtoT, K=3, tol=0.1);
+save(topics_clus, file="../rda/topics-153-ancients-lindo-merged-k-3-countclust-noCtoT.rda")
+
+topics_clus <- maptpx::topics(signature_counts_noCtoT, K=2, tol=0.1);
+save(topics_clus, file="../rda/topics-153-ancients-lindo-merged-k-2-countclust-noCtoT.rda")
+
+topics_clus <- maptpx::topics(signature_counts_noCtoT, K=4, tol=0.1);
+save(topics_clus, file="../rda/topics-153-ancients-lindo-merged-k-4-countclust-noCtoT.rda")
+
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics-153-ancients-lindo-merged-k-2-countclust-noCtoT.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = TRUE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+
+```{r}
+topics_clus <- get(load("../rda/topics-153-ancients-lindo-merged-k-3-countclust-noCtoT.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = TRUE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics-153-ancients-lindo-merged-k-4-countclust-noCtoT.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(c(rep("Lindo_ancient",25),
+                                       rep("Lindo_modern", 25),
+                                       rep("I",38), 
+                                       rep("RISE",27)))
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = TRUE,
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
