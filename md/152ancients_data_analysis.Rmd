@@ -111,11 +111,13 @@ indices <- match(names_id, meta_id)
 
 metadata_matched <- metadata[indices,];
 
-plot(metadata_matched$min_date, pc_data_frame$PC.PC3, las=2, cex.axis=0.7, col="red", xlab="Min.date of ancients", ylab="PC3", main="PC3 vs age of ancients")
+cols1 <- metadata_matched$udg
 
-plot(metadata_matched$min_date, pc_data_frame$PC.PC2, las=2, cex.axis=0.7, col="red", xlab="Min.date of ancients", ylab="PC2", main="PC2 vs age of ancients")
+plot(metadata_matched$min_date, pc_data_frame$PC.PC3, las=2, cex.axis=0.7, col=cols1, xlab="Min.date of ancients", ylab="PC3", main="PC3 vs age of ancients")
 
-plot(metadata_matched$min_date, pc_data_frame$PC.PC1, las=2, cex.axis=0.7, col="red", xlab="Min.date of ancients", ylab="PC1", main="PC1 vs age of ancients")
+plot(metadata_matched$min_date, pc_data_frame$PC.PC2, las=2, cex.axis=0.7, col=cols1, xlab="Min.date of ancients", ylab="PC2", main="PC2 vs age of ancients")
+
+plot(metadata_matched$min_date, pc_data_frame$PC.PC1, las=2, cex.axis=0.7, col=cols1, xlab="Min.date of ancients", ylab="PC1", main="PC1 vs age of ancients", pch=20)
 
 pc_data_frame <- data.frame("PC"=pr$x,
                             "udg"=metadata_matched$udg)

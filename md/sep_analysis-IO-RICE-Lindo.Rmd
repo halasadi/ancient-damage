@@ -1,0 +1,462 @@
+---
+title: "Separate analysis (IO, RISE and Lindo)"
+author: "Kushal K Dey"
+date: "9/30/2016"
+output: html_document
+---
+
+## Packages + Scripts
+
+We load the packages and source the scripts we would need for the analysis of the 152 ancients data.
+
+```{r echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+## the above scripts will eventually be part of flashr package
+source("../R/visDMsignature.R")
+
+## will eventually be part of the damage signature package
+
+##  The libraries we need 
+
+library(CountClust)
+library(ggplot2)
+library(pmsignature)
+library(flashr)
+```
+
+
+Some helper functions we need 
+
+```{r echo=TRUE, eval=TRUE}
+gsub2 <- function(pattern, replacement, x, ...) {
+  for(i in 1:length(pattern))
+    x <- gsub(pattern[i], replacement[i], x, ...)
+  x
+}
+```
+
+## Data Loading + Preprocessing
+
+```{r echo=TRUE, eval=TRUE}
+signature_counts_1 <- get(load("../summary_data/153-ancient-signature-counts-clubbed.rda"))
+
+RISE_labs <- grep("RISE", as.character(rownames(signature_counts_1)))
+
+signature_counts <- signature_counts_1[-RISE_labs,];
+
+signature_set <- colnames(signature_counts)
+
+## dimensions of data: nrows=number of samples 
+## ncols = number of damage/mutation signatures
+
+print(dim(signature_counts))
+
+## the top corner of the counts matrix
+
+signature_counts[1:5,1:5]
+```
+
+Apply PCA 
+
+```{r}
+voom_signature_counts <- t(limma::voom(t(signature_counts))$E);
+voom_weights <- t(limma::voom(t(signature_counts))$weights);
+
+pr <- prcomp(voom_signature_counts)
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                          "labels"=c(rep("IO",dim(signature_counts)[1])))
+
+graphList <- vector(mode="list");
+library(ggplot2)
+
+
+graphList[[1]] <- qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[2]] <-qplot(PC.PC1, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[3]] <-qplot(PC.PC2, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+library(grid)
+library(gridExtra)
+a <- do.call("grid.arrange", 
+               args = list(grobs=graphList,
+                            ncol = 2,
+                            nrow = 2))
+
+```
+
+
+```{r echo=TRUE, eval=FALSE}
+topics_clus <- CountClust::FitGoM(signature_counts, K=2:4, tol=0.01, control=list(tmax=10000));
+save(topics_clus, file="../rda/topics_clus_IO_2_to_4.rda")
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics_clus_IO_2_to_4.rda"))
+```
+
+```{r}
+omega <- topics_clus$clust_2$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_2$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+
+```{r}
+omega <- topics_clus$clust_3$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_3$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+```{r}
+omega <- topics_clus$clust_4$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_4$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+## RISE data
+
+```{r}
+signature_counts <- signature_counts_1[RISE_labs,];
+
+signature_set <- colnames(signature_counts)
+
+## dimensions of data: nrows=number of samples 
+## ncols = number of damage/mutation signatures
+
+print(dim(signature_counts))
+
+## the top corner of the counts matrix
+
+signature_counts[1:5,1:5]
+
+sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
+
+indices <- which(sig_split[,3]=="C" & sig_split[,6]=="T")
+
+signature_counts_noCtoT <- signature_counts[,-indices];
+
+signature_set_noCtoT <- signature_set[-indices];
+
+
+voom_signature_counts_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$E);
+
+
+### track the voom weights 
+
+voom_weights_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$weights);
+
+
+```
+
+Apply PCA 
+
+```{r}
+
+pr <- prcomp(voom_signature_counts_noCtoT)
+
+pc_data_frame <- data.frame("PC"=pr$x,
+                     "labels"=c(rep("RISE",dim(signature_counts_noCtoT)[1])))
+
+graphList <- vector(mode="list");
+library(ggplot2)
+
+
+graphList[[1]] <- qplot(PC.PC1, PC.PC2,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[2]] <-qplot(PC.PC1, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+graphList[[3]] <-qplot(PC.PC2, PC.PC3,
+      data=pc_data_frame,
+      colour=labels)
+
+library(grid)
+library(gridExtra)
+a <- do.call("grid.arrange", 
+               args = list(grobs=graphList,
+                            ncol = 2,
+                            nrow = 2))
+
+```
+
+```{r echo=TRUE, eval=FALSE}
+topics_clus <- CountClust::FitGoM(signature_counts_noCtoT, K=2:4, tol=0.01, control=list(tmax=10000));
+save(topics_clus, file="../rda/topics_clus_RISE_2_to_4_noCtoT.rda")
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics_clus_RISE_2_to_4_noCtoT.rda"))
+```
+
+```{r}
+omega <- topics_clus$clust_2$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_2$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_noCtoT[x])
+
+```
+
+
+```{r}
+omega <- topics_clus$clust_3$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_3$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set_noCtoT[x])
+
+```
+
+```{r}
+omega <- topics_clus$clust_4$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_4$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+```{r echo=TRUE, eval=TRUE}
+signature_counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016.rda"))
+
+signature_counts <- signature_counts[1:25,]
+
+signature_set <- colnames(signature_counts)
+
+## dimensions of data: nrows=number of samples 
+## ncols = number of damage/mutation signatures
+
+print(dim(signature_counts))
+
+## the top corner of the counts matrix
+
+signature_counts[1:5,1:5]
+```
+
+
+```{r echo=TRUE, eval=FALSE}
+topics_clus <- CountClust::FitGoM(signature_counts, K=2:4, tol=0.01, control=list(tmax=10000));
+save(topics_clus, file="../rda/topics_clus_Lindo_ancient_2_to_4.rda")
+```
+
+```{r}
+topics_clus <- get(load("../rda/topics_clus_Lindo_ancient_2_to_4.rda"))
+```
+
+```{r}
+omega <- topics_clus$clust_2$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_2$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+
+```{r}
+omega <- topics_clus$clust_3$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_3$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
+
+```{r}
+omega <- topics_clus$clust_4$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(1:dim(omega)[1])
+)
+
+rownames(omega) <- annotation$sample_id;
+
+StructureGGplot(omega = omega,
+                annotation = annotation,
+                palette = RColorBrewer::brewer.pal(8, "Accent"),
+                yaxis_label = "Moderns vs Ancients",
+                order_sample = FALSE,
+                split_line = list(split_lwd = 0.5,
+                                  split_col = "white"),
+                figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                axis_tick = list(axis_ticks_length = .1,
+                                 axis_ticks_lwd_y = .1,
+                                 axis_ticks_lwd_x = .1,
+                                 axis_label_size = 7,
+                                 axis_label_face = "bold"))
+
+apply(ExtractTopFeatures(topics_clus$clust_4$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+```
