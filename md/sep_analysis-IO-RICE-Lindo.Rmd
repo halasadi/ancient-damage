@@ -2,7 +2,10 @@
 title: "Separate analysis (IO, RISE and Lindo)"
 author: "Kushal K Dey"
 date: "9/30/2016"
-output: html_document
+output: 
+  html_document:
+    css: floating-toc.css
+    toc: true
 ---
 
 ## Packages + Scripts
@@ -34,7 +37,9 @@ gsub2 <- function(pattern, replacement, x, ...) {
 }
 ```
 
-## Data Loading + Preprocessing
+## IO data analysis 
+
+### Data Loading + Preprocessing
 
 ```{r echo=TRUE, eval=TRUE}
 signature_counts_1 <- get(load("../summary_data/153-ancient-signature-counts-clubbed.rda"))
@@ -54,6 +59,8 @@ print(dim(signature_counts))
 
 signature_counts[1:5,1:5]
 ```
+
+### PCA
 
 Apply PCA 
 
@@ -91,6 +98,7 @@ a <- do.call("grid.arrange",
 
 ```
 
+### GoM model + Structure
 
 ```{r echo=TRUE, eval=FALSE}
 topics_clus <- CountClust::FitGoM(signature_counts, K=2:4, tol=0.01, control=list(tmax=10000));
@@ -186,7 +194,227 @@ apply(ExtractTopFeatures(topics_clus$clust_4$theta, top_features = 10, method="p
 
 ```
 
+### Damage signatures
+
+```{r}
+
+## create a list of damage or mutation signatures
+
+sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
+
+## convert the bases to numbers
+
+site_left_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,1])
+site_left_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,2])
+site_right_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,7])
+site_right_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,8])
+
+sub_pattern <- sapply(1:dim(sig_split)[1], function(x) paste(sig_split[x,3:6], collapse=""))
+
+from = c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+to = c(1,2,3,4,5,6)
+
+## pattern of bases matrix
+
+substitute <- gsub2(from, to, sub_pattern)
+
+mutation_features <- sapply(1:dim(sig_split)[1], 
+                                   function(m) paste0(substitute[m], ",", site_left_2[m], ",", site_left_1[m], ",", site_right_1[m], ",", site_right_2[m]))
+
+## matrix of mutation or damage features
+
+mut_features_mat <- data.frame(cbind(substitute, site_left_2, site_left_1, site_right_1, site_right_2))
+rownames(mut_features_mat) <- mutation_features
+colnames(mut_features_mat)=NULL
+mut_features_mat <- as.matrix(apply(mut_features_mat, c(1,2), function(x) as.numeric(x)))
+
+```
+
+```{r}
+theta <- topics_clus$clust_2$theta;
+omega <- topics_clus$clust_2$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 2))
+
+```
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 3))
+
+```
+
+```{r}
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+graphList[[4]] <- visPMSignature(Param, 4)
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 4))
+
+```
+
+### Conditional damage signatures
+
+conditional damage 
+
+```{r message=FALSE, warning=FALSE}
+normalize <- function(x) return(x/sum(x))
+
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+sample_names <- rownames(signature_counts)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+
+index_sub <- c("C->T", "C->A", "C->G", "T->A", "T->C", "T->G")
+
+visDMSignature (theta, 
+                index_sub,
+                pattern=sub_pattern,
+                mutation_features_matrix = mut_features_mat,
+                sample_names,
+                flankingBasesNum=as.integer(numBases),
+                trDir, 
+                fdim, 
+                title_size=10,   
+                panel_title_size=10, 
+                panel_title_font=4, 
+                layout=c(6,1))
+
+```
+
+
 ## RISE data
+
+### Data Loading + Preprocessing
 
 ```{r}
 signature_counts <- signature_counts_1[RISE_labs,];
@@ -221,6 +449,8 @@ voom_weights_noCtoT <- t(limma::voom(t(signature_counts_noCtoT))$weights);
 
 ```
 
+### PCA
+
 Apply PCA 
 
 ```{r}
@@ -254,6 +484,8 @@ a <- do.call("grid.arrange",
                             nrow = 2))
 
 ```
+
+### GoM model + Structure
 
 ```{r echo=TRUE, eval=FALSE}
 topics_clus <- CountClust::FitGoM(signature_counts_noCtoT, K=2:4, tol=0.01, control=list(tmax=10000));
@@ -349,6 +581,231 @@ apply(ExtractTopFeatures(topics_clus$clust_4$theta, top_features = 10, method="p
 
 ```
 
+### Damage Signatures
+
+```{r}
+
+## create a list of damage or mutation signatures
+
+sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
+
+## convert the bases to numbers
+
+site_left_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,1])
+site_left_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,2])
+site_right_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,7])
+site_right_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,8])
+
+sub_pattern <- sapply(1:dim(sig_split)[1], function(x) paste(sig_split[x,3:6], collapse=""))
+
+from = c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+to = c(1,2,3,4,5,6)
+
+## pattern of bases matrix
+
+substitute <- gsub2(from, to, sub_pattern)
+
+mutation_features <- sapply(1:dim(sig_split)[1], 
+                                   function(m) paste0(substitute[m], ",", site_left_2[m], ",", site_left_1[m], ",", site_right_1[m], ",", site_right_2[m]))
+
+## matrix of mutation or damage features
+
+mut_features_mat <- data.frame(cbind(substitute, site_left_2, site_left_1, site_right_1, site_right_2))
+rownames(mut_features_mat) <- mutation_features
+colnames(mut_features_mat)=NULL
+mut_features_mat <- as.matrix(apply(mut_features_mat, c(1,2), function(x) as.numeric(x)))
+
+sub_pattern_noCtoT <- sub_pattern[-indices];
+mut_features_mat_noCtoT <- mut_features_mat[-indices,];
+
+
+```
+
+```{r}
+theta <- topics_clus$clust_2$theta;
+omega <- topics_clus$clust_2$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 2))
+
+```
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 3))
+
+```
+
+```{r}
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat_noCtoT[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+graphList[[4]] <- visPMSignature(Param, 4)
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 4))
+
+```
+
+### Conditional damage signatures
+
+conditional damage 
+
+```{r message=FALSE, warning=FALSE}
+normalize <- function(x) return(x/sum(x))
+
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+sample_names <- rownames(signature_counts_noCtoT)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+
+index_sub <- c("C->A", "C->G", "T->A", "T->C", "T->G")
+
+visDMSignature (theta, 
+                index_sub,
+                pattern=sub_pattern_noCtoT,
+                mutation_features_matrix = mut_features_mat_noCtoT,
+                sample_names,
+                flankingBasesNum=as.integer(numBases),
+                trDir, 
+                fdim, 
+                title_size=10,   
+                panel_title_size=10, 
+                panel_title_font=4, 
+                layout=c(5,1))
+
+```
+
+## Lindo 2016
+
+### Data Loading + Preprocessing
+
 ```{r echo=TRUE, eval=TRUE}
 signature_counts <- get(load("../summary_data/signature-counts-clubbed-Lindo2016.rda"))
 
@@ -366,6 +823,7 @@ print(dim(signature_counts))
 signature_counts[1:5,1:5]
 ```
 
+### GoM model + Structure
 
 ```{r echo=TRUE, eval=FALSE}
 topics_clus <- CountClust::FitGoM(signature_counts, K=2:4, tol=0.01, control=list(tmax=10000));
@@ -460,3 +918,221 @@ StructureGGplot(omega = omega,
 apply(ExtractTopFeatures(topics_clus$clust_4$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
 
 ```
+
+### Damage signature
+
+```{r}
+
+## create a list of damage or mutation signatures
+
+sig_split <- do.call(rbind, lapply(colnames(signature_counts), function(x) strsplit(as.character(x), split="")[[1]]))
+
+## convert the bases to numbers
+
+site_left_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,1])
+site_left_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,2])
+site_right_1 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,7])
+site_right_2 <- gsub2(c("A","C","G","T"), c(1,2,3,4), x=sig_split[,8])
+
+sub_pattern <- sapply(1:dim(sig_split)[1], function(x) paste(sig_split[x,3:6], collapse=""))
+
+from = c("C->A", "C->G", "C->T", "T->A", "T->C", "T->G")
+to = c(1,2,3,4,5,6)
+
+## pattern of bases matrix
+
+substitute <- gsub2(from, to, sub_pattern)
+
+mutation_features <- sapply(1:dim(sig_split)[1], 
+                                   function(m) paste0(substitute[m], ",", site_left_2[m], ",", site_left_1[m], ",", site_right_1[m], ",", site_right_2[m]))
+
+## matrix of mutation or damage features
+
+mut_features_mat <- data.frame(cbind(substitute, site_left_2, site_left_1, site_right_1, site_right_2))
+rownames(mut_features_mat) <- mutation_features
+colnames(mut_features_mat)=NULL
+mut_features_mat <- as.matrix(apply(mut_features_mat, c(1,2), function(x) as.numeric(x)))
+
+```
+
+```{r}
+theta <- topics_clus$clust_2$theta;
+omega <- topics_clus$clust_2$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 2))
+
+```
+
+```{r}
+theta <- topics_clus$clust_3$theta;
+omega <- topics_clus$clust_3$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 3))
+
+```
+
+```{r}
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+library(pmsignature)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+sample_names <- rownames(signature_counts)
+
+K <- dim(omega)[2]
+F <- array(0, c(K, length(fdim), max(fdim)))
+for(k in 1:K){
+  for(kk in 1:length(fdim)){
+    temp <- tapply(theta[,k], mut_features_mat[,kk], sum)
+    F[k,kk,as.numeric(names(temp))] <- as.numeric(temp)
+  }
+}
+
+Param <- new(Class = "EstimatedParameters", 
+           type = type,
+           flankingBasesNum = flankingBasesNum,
+           transcriptionDirection = trDir,
+           possibleFeatures = as.integer(fdim),
+           sampleList = sample_names,
+           signatureNum = as.integer(K),
+           isBackGround = isBG,
+           signatureFeatureDistribution = F,
+           sampleSignatureDistribution = omega,
+           loglikelihood = -100000)
+
+graphList <- list(mode="vector")
+graphList[[1]] <- visPMSignature(Param, 1)
+graphList[[2]] <- visPMSignature(Param, 2)
+graphList[[3]] <- visPMSignature(Param, 3)
+graphList[[4]] <- visPMSignature(Param, 4)
+
+library(grid)
+library(gridExtra)
+do.call("grid.arrange", 
+          args = list(grobs=graphList,
+                      ncol = 1,
+                      nrow = 4))
+
+```
+
+### Conditional damage signatures
+
+conditional damage 
+
+```{r message=FALSE, warning=FALSE}
+normalize <- function(x) return(x/sum(x))
+
+theta <- topics_clus$clust_4$theta;
+omega <- topics_clus$clust_4$omega
+
+sample_names <- rownames(signature_counts)
+
+isBG <- TRUE
+numBases <- 5
+type <- "independent"
+flankingBasesNum = as.integer(numBases)
+trDir <- FALSE
+fdim <- c(6, rep(4, numBases - 1), rep(2, as.integer(trDir)))
+
+index_sub <- c("C->T", "C->A", "C->G", "T->A", "T->C", "T->G")
+
+visDMSignature (theta, 
+                index_sub,
+                pattern=sub_pattern,
+                mutation_features_matrix = mut_features_mat,
+                sample_names,
+                flankingBasesNum=as.integer(numBases),
+                trDir, 
+                fdim, 
+                title_size=10,   
+                panel_title_size=10, 
+                panel_title_font=4, 
+                layout=c(6,1))
+
+```
+
