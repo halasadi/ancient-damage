@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     for read in samfile.fetch():
         NM = read.get_tag('NM')
-        if (NM > 0):
+        if (NM > 0 or read.mapping_quality > 30):
             seq = read.seq
             aligned_pairs = read.get_aligned_pairs(with_seq=True)
             inds = find_substitutions(aligned_pairs)
