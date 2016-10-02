@@ -48,7 +48,7 @@ if __name__ == '__main__':
                 if (ind < 2 or ind > (len(seq)-3) or mut == 'N'):
                     continue
                 quality_scores = read.query_qualities
-                if (quality_scores[ind-2] < MIN_BQ_SCORE or quality_scores[ind-1] < MIN_BQ_SCORE or quality_scores[ind] < MIN_BQ_SCORE or quality_scores[ind+1] < MIN_BQ_SCORE or quality_scores[ind+2] < MIN_BQ_SCORE):
+                if (quality_scores[ind-2] < MIN_BQ_SCORE or quality_scores[ind-1] < MIN_BQ_SCORE or quality_scores[ind] < MIN_BQ_SCORE or quality_scores[ind+1] < MIN_BQ_SCORE or quality_scores[ind+2] < MIN_BQ_SCORE or ind < read.qstart or ind > read.qend):
                     continue
                 patt = get_pattern(ind, aligned_pairs, seq)
                 if patt in patternsDict:
