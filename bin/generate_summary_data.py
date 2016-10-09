@@ -16,7 +16,7 @@ def find_substitutions(aligned_pairs):
 ### "AAG->TCC" 
 def concat_pattern(ind, start, end, aligned_pairs, seq, TYPE):
     ref = aligned_pairs[ind][2].upper()
-    mut = seq[ind]
+    mut = seq[aligned_pairs[ind][0]]
     if (TYPE == '0L'):
         patt = 'XX' + ref + '->' + mut + seq[ind+1] + seq[ind+2]
     elif (TYPE == '1L'):
@@ -30,12 +30,11 @@ def concat_pattern(ind, start, end, aligned_pairs, seq, TYPE):
     return(patt)
 
 def is_quality(qs):
-    if (length([x for x in qs if x < MIN_BQ_SCORE]) > 0):
+    if (len([x for x in qs if x < MIN_BQ_SCORE]) > 0):
         return(False)
     return(True)
 
 if __name__ == '__main__':
-
     parser = arg.ArgumentParser()
     parser.add_argument("-f", "--fname", required=True, help="bam file")
     parser.add_argument("-o", "--out", required=True, help="out file")
@@ -50,7 +49,7 @@ if __name__ == '__main__':
         if (read.get_tag('NM') == 0 or read.mapping_quality < 30):
             continue
         
-        seq = read.seq
+        seq = read.query_sequence
         aligned_pairs = read.get_aligned_pairs(with_seq=True)
         mutInds = find_substitutions(aligned_pairs)
         
@@ -62,6 +61,9 @@ if __name__ == '__main__':
             # we don't count mutation in soft clipped areas
             if (ind < read.qstart or ind > read.qend or mut == 'N'):
                 continue
+
+            # below indices includes the mutation
+            # to check if all the base quality scores are greater than 30
 
             # no base pair flanking to the left
             if (ind < (read.qstart+1)):
@@ -75,33 +77,32 @@ if __name__ == '__main__':
                 start = read.qstart
                 end = read.qstart + 2
 
+            # qend is not 0 based (it is the length of the read)
             # no base pair flanking to the right
             elif (ind > (read.qend-2)):
                 TYPE = '0R'
-                start = read.qend 
-                end = read.qend + 1
+                start = read.qend - 1
+                end = read.qend 
 
             # one base pair flanking to the right
             elif (ind > (read.qend-3)):
                 TYPE = '1R'
-                start = read.qend-1
-                end = read.end + 1
+                start = read.qend-2
+                end = read.qend
             else:
                 start = ind-2
                 end = ind+3
 
             qualityScores = read.query_qualities 
-            if (!is_quality(qualityScores[start:end])):
+            if (not is_quality(qualityScores[start:end])):
                 continue
 
-            patt = concat_pattern(ind, start, end, aligned_pairs, read.seq, TYPE)
-            
-            # check this line
-            val = (patt, start, end)              
-            if patt in patternsDict:
-                patternsDict[patt] += 1
+            patt = concat_pattern(ind, start, end, aligned_pairs, seq, TYPE)
+            val = (patt, start, read.qend-end)              
+            if val in patternsDict:
+                patternsDict[val] += 1
             else:
-                patternsDict[patt] = 1
+                patternsDict[val] = 1
 
     # write to file
     with open(args.out, 'w') as csv_file:
