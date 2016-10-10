@@ -89,10 +89,18 @@ damage.ic<-function(pwm) {
   
 damage_ic <- damage.ic(pwm)
 
-damageLogo(pwm[[1]], ic = damage_ic[,1], ic.scale = TRUE)
+damageLogo.skeleton(pwm[[1]], ic = damage_ic[,1], ic.scale = TRUE)
+damageLogo.skeleton(pwm[[2]], ic = damage_ic[,2], ic.scale = TRUE)
+damageLogo.skeleton(pwm[[3]], ic = damage_ic[,3], ic.scale = TRUE)
+damageLogo.skeleton(pwm[[4]], ic = damage_ic[,4], ic.scale = TRUE)
 
-damageLogo(pwm[[2]], ic = damage_ic[,2], ic.scale = TRUE)
 
-damageLogo(pwm[[3]], ic = damage_ic[,3], ic.scale = TRUE)
+topics_clus <- get(load("../rda/CountClust_output_Lindo2016_with_C_to_T.rda"));
+theta <- topics_clus$clust_4$theta
 
-damageLogo(pwm[[4]], ic = damage_ic[,4], ic.scale = TRUE)
+damageLogo(theta)
+
+
+
+
+
