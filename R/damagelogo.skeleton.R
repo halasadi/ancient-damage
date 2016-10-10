@@ -728,10 +728,10 @@ damageLogo.skeleton <- function(pwm,
   }
     
   if(is.null(pop_name)){
-     grid.text("Damage plot", y = unit(1, "npc") + unit(1.5, "lines"),
+     grid.text("Damage logo plot", y = unit(1, "npc") + unit(1.5, "lines"),
             gp = gpar(fontsize = 16))
   }else{
-     grid.text(paste0("Damage plot for ", pop_name), y = unit(1, "npc") + unit(1.5, "lines"),
+     grid.text(paste0("Damage logo plot for ", pop_name), y = unit(1, "npc") + unit(1.5, "lines"),
               gp = gpar(fontsize = 16))
   }
   
