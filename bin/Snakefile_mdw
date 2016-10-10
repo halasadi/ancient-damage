@@ -18,5 +18,5 @@ rule call_damage:
     params:
         nflanking = '2'
     shell:
-        'python ancient-damage/bin/generate_summary_data_reference_mdw.py -bf {input.bam} -ff {input.ref} -n {params.nflanking} -o {output}'
-
+        'python ancient-damage/bin/generate_summary_data.py -f {input.bam} -o {output}'
+        #'python ancient-damage/bin/generate_summary_data_reference_mdw.py -bf {input.bam} -ff {input.ref} -n {params.nflanking} -o {output}'
