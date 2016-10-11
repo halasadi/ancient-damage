@@ -6,7 +6,7 @@ damage.build.counts =  function(file,
                                 breaks=NULL,
                                 type=1)
 {
-  file <-  read.csv(file=file);
+  file <-  read.csv(file=file, header=FALSE);
   file[which(file[,3]==-1), 3] <- 0
   
   min_dist_from_end <- apply(file[,2:3], 1, function(x) return(min(x)))
