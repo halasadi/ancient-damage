@@ -4,6 +4,9 @@ import argparse as arg
 
 MIN_BQ_SCORE = 20
 
+
+# re-write code so instead of find_substitutions function, replace it with a function that finds positions of all mutations, reference, and mutation
+
 # returns the position of the mutation along the read (0 based)
 def find_substitutions(aligned_pairs):
     inds = ()
@@ -14,19 +17,20 @@ def find_substitutions(aligned_pairs):
     return(inds)
 
 ### "AAG->TCC" 
-def concat_pattern(ind, start, end, aligned_pairs, seq, TYPE):
+def concat_pattern(ind, aligned_pairs, seq, TYPE):
     ref = aligned_pairs[ind][2].upper()
-    mut = seq[aligned_pairs[ind][0]]
+    mutPos = aligned_pairs[ind][0]
+    mut = seq[mutPos]
     if (TYPE == '0L'):
-        patt = 'XX' + ref + '->' + mut + seq[ind+1] + seq[ind+2]
+        patt = 'XX' + ref + '->' + mut + seq[mutPos+1] + seq[mutPos+2]
     elif (TYPE == '1L'):
-        patt = 'X' + seq[ind-1] + ref + '->' + mut + seq[ind+1] + seq[ind+2]
+        patt = 'X' + seq[mutPos-1] + ref + '->' + mut + seq[mutPos+1] + seq[mutPos+2]
     elif (TYPE == '0R'):
-        patt = seq[ind-2] + seq[ind-1] + ref + '->' + mut + 'XX'
+        patt = seq[mutPos-2] + seq[mutPos-1] + ref + '->' + mut + 'XX'
     elif (TYPE == '1R'):
-        patt = seq[ind-2] + seq[ind-1] + ref + '->' + mut + seq[ind+1] + 'X'
+        patt = seq[mutPos-2] + seq[mutPos-1] + ref + '->' + mut + seq[mutPos+1] + 'X'
     else:
-        patt = seq[ind-2] + seq[ind-1] + ref + '->' + mut + seq[ind+1] + seq[ind+2]
+        patt = seq[mutPos-2] + seq[mutPos-1] + ref + '->' + mut + seq[mutPos+1] + seq[mutPos+2]
     return(patt)
 
 def is_quality(qs):
@@ -52,40 +56,43 @@ if __name__ == '__main__':
         seq = read.query_sequence
         aligned_pairs = read.get_aligned_pairs(with_seq=True)
         mutInds = find_substitutions(aligned_pairs)
+
+        #ind must be less than read.qend
         
         for ind in mutInds:
             
-            mut = seq[aligned_pairs[ind][0]]
+            mutPos = aligned_pairs[ind][0]            
+            mut = seq[mutPos]
             TYPE = 'N'
             
             # we don't count mutation in soft clipped areas
-            if (ind < read.qstart or ind > read.qend or mut == 'N'):
+            if (mutPos < read.qstart or mutPos > read.qend or mut == 'N'):
                 continue
 
             # below indices includes the mutation
             # to check if all the base quality scores are greater than 30
 
             # no base pair flanking to the left
-            if (ind < (read.qstart+1)):
+            if (mutPos < (read.qstart+1)):
                 TYPE = '0L'
                 start = read.qstart
                 end = read.qstart + 1
                 
             # one base pair flanking to the left
-            elif (ind < (read.qstart+2)):
+            elif (mutPos < (read.qstart+2)):
                 TYPE = '1L'
                 start = read.qstart
                 end = read.qstart + 2
 
             # qend is not 0 based (it is the length of the read)
             # no base pair flanking to the right
-            elif (ind > (read.qend-2)):
+            elif (mutPos > (read.qend-2)):
                 TYPE = '0R'
                 start = read.qend - 1
                 end = read.qend 
 
             # one base pair flanking to the right
-            elif (ind > (read.qend-3)):
+            elif (mutPos > (read.qend-3)):
                 TYPE = '1R'
                 start = read.qend-2
                 end = read.qend
@@ -97,8 +104,11 @@ if __name__ == '__main__':
             if (not is_quality(qualityScores[start:end])):
                 continue
 
-            patt = concat_pattern(ind, start, end, aligned_pairs, seq, TYPE)
-            val = (patt, start, read.qend-end)              
+            mutStart = mutPos - read.qstart
+            mutEnd   = (read.qend-1) - mutPos
+
+            patt = concat_pattern(ind, aligned_pairs, seq, TYPE)
+            val = (patt, mutStart, mutEnd)              
             if val in patternsDict:
                 patternsDict[val] += 1
             else:
