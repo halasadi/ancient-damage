@@ -10,12 +10,13 @@ library(seqLogo)
 mFile <- system.file("Exfiles/pwm1", package="seqLogo")
 m <- read.table(mFile)
 p <- makePWM(m)
+p
 mat1 <- cbind(p@pwm[,c(1,2)], rep(0,4), p@pwm[,c(7,8)]);
 colnames(mat1) <- c("-2", "-1", "0", "1", "2")
-mat2 <- cbind(rep(0,6), rep(0,6), 
+mat2 <- cbind(rep(0,6), rep(0,6),
               c(0.5, 0.2, 0.2, 0.05, 0.05, 0),
               rep(0,6), rep(0,6))
-rownames(mat2) <- c("C->T", "C->A", "C->G", 
+rownames(mat2) <- c("C->T", "C->A", "C->G",
                     "T->A", "T->C", "T->G")
 
 pwm1 <- rbind(mat1, mat2)
@@ -23,10 +24,10 @@ colSums(pwm1)
 
 mat1 <- cbind(p@pwm[,c(3,4)], rep(0,4), p@pwm[,c(5,6)]);
 colnames(mat1) <- c("-2", "-1", "0", "1", "2")
-mat2 <- cbind(rep(0,6), rep(0,6), 
+mat2 <- cbind(rep(0,6), rep(0,6),
               c(0.3, 0.2, 0.2, 0.1, 0.1, 0.1),
               rep(0,6), rep(0,6))
-rownames(mat2) <- c("C->T", "C->A", "C->G", 
+rownames(mat2) <- c("C->T", "C->A", "C->G",
                     "T->A", "T->C", "T->G")
 
 pwm2 <- rbind(mat1, mat2)
@@ -34,10 +35,10 @@ colSums(pwm2)
 
 mat1 <- cbind(p@pwm[,c(3,4)], rep(0,4), p@pwm[,c(7,8)]);
 colnames(mat1) <- c("-2", "-1", "0", "1", "2")
-mat2 <- cbind(rep(0,6), rep(0,6), 
+mat2 <- cbind(rep(0,6), rep(0,6),
               c(0.4, 0.4, 0.05, 0.05, 0.05, 0.05),
               rep(0,6), rep(0,6))
-rownames(mat2) <- c("C->T", "C->A", "C->G", 
+rownames(mat2) <- c("C->T", "C->A", "C->G",
                     "T->A", "T->C", "T->G")
 
 pwm3 <- rbind(mat1, mat2)
@@ -45,10 +46,10 @@ colSums(pwm3)
 
 mat1 <- cbind(p@pwm[,c(1,3)], rep(0,4), p@pwm[,c(5,6)]);
 colnames(mat1) <- c("-2", "-1", "0", "1", "2")
-mat2 <- cbind(rep(0,6), rep(0,6), 
+mat2 <- cbind(rep(0,6), rep(0,6),
               c(0.4, 0.1, 0, 0, 0.25, 0.25),
               rep(0,6), rep(0,6))
-rownames(mat2) <- c("C->T", "C->A", "C->G", 
+rownames(mat2) <- c("C->T", "C->A", "C->G",
                     "T->A", "T->C", "T->G")
 
 pwm4 <- rbind(mat1, mat2)
@@ -66,15 +67,15 @@ pwm[[4]] <- pwm4
 
 ic.scale=FALSE
 xaxis=TRUE
-yaxis=TRUE 
-xaxis_fontsize=5 
+yaxis=TRUE
+xaxis_fontsize=5
 xlab_fontsize=15
 y_fontsize=15
 
 damage.ic<-function(pwm) {
   npos<-ncol(pwm[[1]])
   ic<- matrix(0, npos, length(pwm))
-  
+
   for(i in 1:npos){
     mat <- numeric()
     for(j in 1:length(pwm)){
@@ -83,10 +84,10 @@ damage.ic<-function(pwm) {
     mat_clean <- mat[rowSums(mat) != 0,]
     ic[i,] <- pwm2ic(mat_clean)
   }
-  
+
   return(ic)
 }
-  
+
 damage_ic <- damage.ic(pwm)
 
 damageLogo.skeleton(pwm[[1]], ic = damage_ic[,1], ic.scale = TRUE)
