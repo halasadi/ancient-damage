@@ -12,6 +12,13 @@ save(out,
 signature_counts <- get(load("../processed_data/annagosling2016-counts-table.rda"))
 validation_check <- club_signature_validation_plot(signature_counts, log=TRUE)
 clubbed_counts <- club_signature_counts(signature_counts)
+clubbed_counts <- clubbed_counts[-28,];
+
+filtered_counts_2 <- filter_signatures_w_mutation(clubbed_counts)
+
+prop <- filtered_counts_2[,3]/rowSums(clubbed_counts)
+
+
 
 ####################################################################
 
@@ -19,12 +26,16 @@ clubbed_counts <- club_signature_counts(signature_counts)
 
 #####################################################################
 
-names <- rownames(signature_counts);
+names <- rownames(clubbed_counts);
 control_indices <- c(grep("EXN", names), grep("Libneg", names), grep("PCRneg", names))
 
 labs <- character();
-labs <- rep("ancient", dim(out)[1])
+labs <- rep("ancient", dim(clubbed_counts)[1])
 labs[control_indices] <- "controls"
+
+plot(prop, col=factor(labs), pch=20, ylab="proportion of C-> T changes", xlab="sample index")
+legend("bottomleft", legend = c("ancients", "controls"), fill=c("black", "red"), cex=0.5)
+
 
 ###################################################################
 
@@ -38,7 +49,7 @@ gridPCA_signatures(clubbed_counts, labs)
 topics_clus <- maptpx::topics(clubbed_counts, K=2, tol=0.1);
 save(topics_clus, file="../rda/annagosling2016/topics-annagosling2016-k-2.rda")
 
-topics_clus <- maptpx::topics(clubbed_counts, K=3, tol=0.1);
+topics_clus <- maptpx::topics(clubbed_counts, K=3, tol=1);
 save(topics_clus, file="../rda/annagosling2016/topics-annagosling2016-k-3.rda")
 
 topics_clus <- maptpx::topics(clubbed_counts, K=4, tol=1);
@@ -63,7 +74,7 @@ CountClust::StructureGGplot(omega = omega,
                             palette = RColorBrewer::brewer.pal(8, "Accent"),
                             yaxis_label = "Moderns vs Ancients",
                             order_sample = FALSE,
-                            figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: with C->T/G->A"),
+                            figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: positions + all signatures"),
                             axis_tick = list(axis_ticks_length = .1,
                                              axis_ticks_lwd_y = .1,
                                              axis_ticks_lwd_x = .1,
@@ -86,10 +97,10 @@ filtered_counts <- filter_signatures_wo_location(clubbed_counts);
 
 gridPCA_signatures(filtered_counts, labs)
 
-topics_clus <- maptpx::topics(filtered_counts, K=2, tol=0.1);
+topics_clus <- maptpx::topics(filtered_counts, K=2, tol=1);
 save(topics_clus, file="../rda/annagosling2016/topics-annagosling2016-k-2-filtered.rda")
 
-topics_clus <- maptpx::topics(filtered_counts, K=3, tol=0.1);
+topics_clus <- maptpx::topics(filtered_counts, K=3, tol=1);
 save(topics_clus, file="../rda/annagosling2016/topics-annagosling2016-k-3-filtered.rda")
 
 topics_clus <- maptpx::topics(filtered_counts, K=4, tol=1);
@@ -374,7 +385,7 @@ StructureGGplot(omega = prop_substitute_sig_CtoTjustX,
 
 ########  Comparative study between extremal C->T and non extremal C->T  #########
 
-filtered_counts <- filter_signatures_wo_location(clubbed_counts_reduced);
+filtered_counts <- filter_signatures_wo_location(clubbed_counts);
 
 names <- colnames(filtered_counts);
 
@@ -395,6 +406,21 @@ for(num in 1:dim(filtered_counts)[1]){
 }
 
 rownames(filtered_counts_w_mutation) <- rownames(filtered_counts)
+
+
+propX <- filtered_counts_w_mutation[,6]/rowSums(clubbed_counts)
+prop_general <- filtered_counts_w_mutation[,5]/rowSums(clubbed_counts)
+
+par(mfrow=c(1,1))
+plot(propX, (prop_general+ propX), col=factor(labs), pch=20, ylab="proportion of C-> T (X)", xlab="proportion of C->T")
+legend("bottomright", legend = c("ancients", "controls"), fill=c("black", "red"), cex=0.6)
+
+plot(propX, prop_general, col=factor(labs), pch=20, ylab="proportion of C-> T (X)", xlab="proportion of C->T (no X)")
+legend("topright", legend = c("ancients", "controls"), fill=c("black", "red"), cex=0.6)
+
+plot(propX, col=factor(labs), pch=20, ylab="proportion of C-> T (X)", xlab="sample index")
+legend("bottomright", legend = c("ancients", "controls"), fill=c("black", "red"), cex=0.6)
+
 
 prop_substitute_sig <- t(apply(filtered_counts_w_mutation, 1, function(x) return(x/sum(x))))
 
@@ -495,4 +521,42 @@ apply(CountClust::ExtractTopFeatures(topics_clus$theta, top_features = 50, metho
 
 ################  just extremal signatures  #########################
 
+filtered_counts <- filter_signatures_wo_location(clubbed_counts_reduced);
+
+filtered_counts_onlyX <- filtered_counts[,grep("X", colnames(filtered_counts))]
+colnames(filtered_counts_onlyX)
+
+topics_clus <- maptpx::topics(filtered_counts_onlyX, K=2, tol=0.1)
+save(topics_clus, file="../rda/annagosling2016/topics-annagosling2016-k-2-filtered_reduced_wo_position_onlyX.rda")
+
+topics_clus <- maptpx::topics(filtered_counts_onlyX, K=3, tol=0.1)
+save(topics_clus, file="../rda/annagosling2016/topics-annagosling2016-k-3-filtered_reduced_wo_position_onlyX.rda")
+
+topics_clus <- get(load("../rda/annagosling2016/topics-annagosling2016-k-2-filtered_reduced_wo_position_onlyX.rda"))
+
+omega <- topics_clus$omega
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(labs_reduced)
+)
+
+rownames(omega) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: only extremal signatures"),
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+signature_set <- colnames(filtered_counts_onlyX)
+apply(CountClust::ExtractTopFeatures(topics_clus$theta, top_features = 50, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+
+###########     with X  admixture plot   ############################
 
