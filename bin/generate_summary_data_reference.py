@@ -8,14 +8,20 @@ MIN_BQ_SCORE = 20
 MIN_MQ_SCORE = 30
 
 def find_substitutions(aligned_pairs):
+    """
+    For every mutation, get the reference basepair (refs), the mutation position
+    along the read (mpos) and the position of the mutation in the genome (posg)
+    """
     refs = ()
     mpos = ()
+    posg = ()
     for i in range(0, len(aligned_pairs)):
         if (aligned_pairs[i][2] is not None):
             if (aligned_pairs[i][2].islower()):
                 mpos = mpos + (aligned_pairs[i][0],)
                 refs = refs + (aligned_pairs[i][2].upper(),)
-    return((refs, mpos))
+                posg = posg + (aligned_pairs[i][1],)
+    return((refs, mpos, posg))
 
 
 if __name__ == '__main__':
@@ -23,30 +29,27 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--bam", required=True, help="bam file")
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
-    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = True, action = 'store_true')
-    
-    
+    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = True, action = 'store_true', dest = "add_chr")
     args = parser.parse_args()
 
-    print(args.addChr)
-    
-    samfile = pysam.AlignmentFile(args.fname, "rb")
+    ## ../data/T004_all_chr.bam
+    samfile = pysam.AlignmentFile(args.bam, "rb")
     ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
-    fastfile = Fasta(args.fasta, as_raw = True)
+    fastafile = Fasta(args.fasta, as_raw = True)
 
     patternsDict = {}
 
-    chrs = [str(i) for i in range(1,23)]
+    chrs = [i for i in range(1,23)]
     
     for chr in chrs:
         
-        for read in samfile.fetch(('chr' + chr) if parser.add_chr else chr):
+        for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
             if (read.get_tag('NM') == 0 or read.mapping_quality < MIN_MQ_SCORE):
                 continue
 
             seq = read.query_sequence
             aligned_pairs = read.get_aligned_pairs(with_seq=True)
-            (refs, mutPos) = find_substitutions(aligned_pairs)
+            (refs, mutPos, posg) = find_substitutions(aligned_pairs)
             mapq = read.query_qualities
     
             for i in range(len(mutPos)):
@@ -54,18 +57,18 @@ if __name__ == '__main__':
                 pos = mutPos[i]
                 mut = seq[pos]
         
-                if (mapq[pos] < MIN_MP_SCORE):
+                if (mapq[pos] < MIN_BQ_SCORE):
                     continue
 
                 # we don't count mutation in soft clipped areas
                 if (pos < read.qstart or pos > read.qend or mut == 'N'):
                     continue
 
-                start = pos-2
-                end = pos+2
-                # 0-based
+                start = posg[i]-2
+                end = posg[i]+2
+                # fastafile access is 0-based
                 ref = fastafile[(chr-1)][(start-1):end]
-                patt = ref[0:2] + mut + ref[3:5]
+                patt = ref[0:3] + '->' + mut + ref[3:5]
 
                 mutStart = pos - read.qstart
                 # read.qend is not 0-based
