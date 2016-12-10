@@ -6,7 +6,15 @@ workdir: '/project/mstephens/ancient-damage/'
 rule all:
     input:
         expand('csv/{sample}.q30.csv', sample = ANCIENT_SAMPLES)
-    
+
+rule index_bams:
+    input:
+        bam = 'data/{sample}.bam'
+    output:
+        bai = 'data/{sample}.bam.bai'
+    shell:
+        'samtools index {input.bam}'
+        
 rule call_damage:
     input:
         bam = 'data/{sample}.bam',
@@ -14,5 +22,5 @@ rule call_damage:
     output:
         'csv/{sample}.q30.csv'
     shell:
-        'python /home/halasadi/ancient-damage/bin/generate_summary_data.py -f {input.bam} -o {output}'
+        'python bin/generate_summary_data.py -f {input.bam} -o {output}'
 
