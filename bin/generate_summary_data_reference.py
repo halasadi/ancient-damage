@@ -23,10 +23,12 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--bam", required=True, help="bam file")
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
-    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", dest = addChr, action = 'store_true')
-    parser.add_argument("--no-add-chr", help = "don't add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", dest = addChr, action = 'store_false')
+    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = True, action = 'store_true')
+    
     
     args = parser.parse_args()
+
+    print(args.addChr)
     
     samfile = pysam.AlignmentFile(args.fname, "rb")
     ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
@@ -34,14 +36,11 @@ if __name__ == '__main__':
 
     patternsDict = {}
 
-    if (parser.addChr):
-        chrs = ["chr" + str(i) for i in range(1,23)]
-    else:
-        chrs = [str(i) for i in range(1,23)]
-
+    chrs = [str(i) for i in range(1,23)]
+    
     for chr in chrs:
         
-        for read in samfile.fetch(chr):
+        for read in samfile.fetch(('chr' + chr) if parser.add_chr else chr):
             if (read.get_tag('NM') == 0 or read.mapping_quality < MIN_MQ_SCORE):
                 continue
 
@@ -65,7 +64,7 @@ if __name__ == '__main__':
                 start = pos-2
                 end = pos+2
                 # 0-based
-                ref = fastafile[(chr-1)][(start-1):(end-1)]
+                ref = fastafile[(chr-1)][(start-1):end]
                 patt = ref[0:2] + mut + ref[3:5]
 
                 mutStart = pos - read.qstart
