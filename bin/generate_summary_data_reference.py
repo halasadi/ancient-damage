@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--bam", required=True, help="bam file")
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
-    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = True, action = 'store_true', dest = "add_chr")
+    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
     args = parser.parse_args()
 
     ## ../data/T004_all_chr.bam

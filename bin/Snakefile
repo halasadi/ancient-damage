@@ -1,8 +1,10 @@
 import glob, os
 
+
 ANCIENT_SAMPLES = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/*.bam")))]
 
 workdir: '/project/mstephens/ancient-damage/'
+
 rule all:
     input:
         expand('csv/{sample}.q30.csv', sample = ANCIENT_SAMPLES)
@@ -18,9 +20,14 @@ rule index_bams:
 rule call_damage:
     input:
         bam = 'data/{sample}.bam',
-        bai = 'data/{sample}.bam.bai'
+        bai = 'data/{sample}.bam.bai',
+        ref = '/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa'
     output:
         'csv/{sample}.q30.csv'
-    shell:
-        'python bin/generate_summary_data.py -f {input.bam} -o {output}'
+    run:
+        inp = wildcards.sample
+        if (inp.startswith('RISE') or inp.startswith('ADR') or inp.startswith('I')):
+            shell('python bin/generate_summary_data_reference.py -b {input.bam} -o {output} -f {input.ref}')
+        else:
+            shell('python bin/generate_summary_data_reference.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
 
