@@ -66,8 +66,7 @@ if __name__ == '__main__':
 
                 start = posg[i]-2
                 end = posg[i]+2
-                # fastafile access is 0-based
-                ref = fastafile[(chr-1)][(start-1):end]
+                ref = fastafile[(chr-1)][start:(end+1)]
                 patt = ref[0:3] + '->' + mut + ref[3:5]
 
                 mutStart = pos - read.qstart
