@@ -3,6 +3,7 @@ import csv
 import argparse as arg
 
 MIN_BQ_SCORE = 20
+MIN_MP_SCORE = 30
 
 def find_substitutions(aligned_pairs):
     refs = ()
@@ -46,14 +47,14 @@ if __name__ == '__main__':
 
     for read in samfile.fetch():
 
-        if (read.get_tag('NM') == 0 or read.mapping_quality < 30):
+        if (read.get_tag('NM') == 0 or read.mapping_quality < MIN_MQ_SCORE):
             continue
-        
+
         seq = read.query_sequence
         aligned_pairs = read.get_aligned_pairs(with_seq=True)
 
         (refs, mutPos) = find_substitutions(aligned_pairs)
-        
+
         for i in range(len(mutPos)):
 
             pos = mutPos[i]
@@ -64,7 +65,6 @@ if __name__ == '__main__':
             # we don't count mutation in soft clipped areas
             if (pos < read.qstart or pos > read.qend or mut == 'N'):
                 continue
-
 
             # no base pair flanking to the left
             if (pos < (read.qstart+1)):
