@@ -6,7 +6,7 @@
 
 
 dir <- "../data/Lindo2016ancients/";
-out <- aggregate_bin_counts(dir, breaks = c(-1,5,10,15))
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 save(out,
      file="../processed_data/lindo2016ancients-counts-table.rda")
 
@@ -19,7 +19,7 @@ filtered_counts_ancient <- filter_signatures_wo_location(clubbed_counts);
 ################################   Moderns data  ######################################
 
 dir <- "../data/Lindo2016moderns/";
-out <- aggregate_bin_counts(dir, breaks = c(-1,5,10,15))
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 save(out,
      file="../processed_data/lindo2016moderns-counts-table.rda")
 
