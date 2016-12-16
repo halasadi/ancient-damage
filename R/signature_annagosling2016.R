@@ -136,6 +136,10 @@ pattern_plot_full(file="../data/AnnaGosling2016data/ADR-T2-PCRneg.dup.q30.csv",
                   sample_name = "PCRneg",
                   cols = color)
 
+color=c("red","blue","cornflowerblue","black","cyan","darkblue",
+        "brown4","burlywood","darkgoldenrod1","darkgray","deepskyblue","darkkhaki",
+        "firebrick","darkorchid","hotpink","green","magenta","yellow", "azure1","azure4");
+
 color1 <- color;
 color1[7:9] <- color[1:3]
 color1[1:3] <- color[7:9]
@@ -260,3 +264,18 @@ pattern_plot_full(file="../data/AnnaGosling2016data/ADR-T2-EXN2.dup.q30.csv",
                   cols = color1)
 
 
+par(mfrow=c(1,2))
+
+pattern_plot_full(file="../data/AnnaGosling2016data/ADR-T1-S32.dup.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  plot_type="left",
+                  sample_name = "S32",
+                  cols = color)
+
+pattern_plot_full(file="../data/AnnaGosling2016data/ADR-T1-S32.dup.q30.csv",
+                  pattern = c("G->A", "G->C", "G->T",  "T->G", "T->A", "T->C",
+                              "C->T", "C->G", "C->A",  "A->G", "A->T", "A->C"),
+                  plot_type="right",
+                  sample_name = "S32",
+                  cols = color1)
