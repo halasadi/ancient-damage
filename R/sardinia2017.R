@@ -203,7 +203,7 @@ labs1 <- labs[-indices1];
 clubbed_counts_C_to_T_1 <- clubbed_counts_C_to_T[-indices1,]
 
 
-topics_clus_3 <- maptpx::topics(clubbed_counts_C_to_T_1, K=3, type="full", tol=10)
+topics_clus_3 <- maptpx::topics(clubbed_counts_C_to_T_1, K=2, type="full", tol=10)
 
 omega <- topics_clus_3$omega
 
@@ -274,3 +274,23 @@ position <- as.numeric(as.matrix(sapply(rownames(theta), function(x) return (sub
 new_theta_pos <- tbl_df(theta) %>% mutate(position) %>% group_by(position) %>% summarise_each(funs(sum)) %>% as.data.frame()
 
 plot_graph(new_theta_pos[,1])
+
+par(mfrow=c(1,2))
+l1 <- pattern_plot("../data/Sardinia2017/ISB001.A0201_S0_L008_R1_001.fastq.fq.qF.sorted.cleaned_rmdup.q30.csv", pattern="T->A", plot_type = "left", use_prop = TRUE)
+l2 <- pattern_plot("../data/AnnaGosling2016data/ADR-T1-M241.dup.q30.csv", pattern="T->A", plot_type = "left", use_prop = TRUE)
+l3 <- pattern_plot("../data/Lindo2016ancients/300_all_chr.q30.csv", pattern="T->A", plot_type = "left", use_prop = TRUE)
+l4 <- pattern_plot("../data/Lindo2016moderns/S002_all_chr.q30.csv", pattern="T->A", plot_type = "left", use_prop = TRUE)
+l5 <- pattern_plot("../data/AnnaGosling2016data/ADR-T2-PCRneg.dup.q30.csv", pattern="T->A", plot_type = "left", use_prop = TRUE)
+
+plot(l1, col="red", type="l")
+lines(l2, col="green")
+lines(l3, col="blue")
+lines(l4, col="black")
+lines(l5, col="orange")
+
+legend("topright", legend=c("sardinia", "gosling ancient", "lindo ancient", "lindo modern", "control"),
+       fill=c("red", "green", "blue", "black", "orange"))
+
+
+l2 <- pattern_plot("../data/Lindo2016ancients/507_all_chr.q30.csv", pattern="C->T", plot_type = "left", use_prop = TRUE)
+l3 <- pattern_plot("../data/Lindo2016moderns/S002_all_chr.q30.csv", pattern="C->T", plot_type = "left", use_prop = TRUE)

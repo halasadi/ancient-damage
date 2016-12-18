@@ -3,7 +3,7 @@
 ##############    Anna Gosling 2016 DNA damage data study  ###########################
 
 dir <- "../data/AnnaGosling2016data/";
-out <- aggregate_bin_counts(dir, breaks = c(-1,5,10,15))
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 save(out,
      file="../processed_data/annagosling2016-counts-table.rda")
 
