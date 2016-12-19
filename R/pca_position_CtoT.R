@@ -39,6 +39,6 @@ ll[["gosling-control"]] <- gosling_controls_counts_CtoT
 ll[["gosling-ancient"]] <- gosling_ancient_counts_CtoT
 
 out <- gridPCA_signatures_combo(ll,
-                         input_pos=1:5,
+                         input_pos=1:10,
                          normalize=FALSE)
 
