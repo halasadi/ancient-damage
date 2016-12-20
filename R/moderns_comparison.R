@@ -49,7 +49,7 @@ pooled_counts <- rbind(filtered_counts_thousandG_2, filtered_counts_HGDP_2, filt
 gridPCA_signatures(pooled_counts, factor(labs))
 
 library(CountClust)
-topic_clus <- maptpx::topics(pooled_counts, K=2, tol=10)
+topic_clus <- maptpx::topics(pooled_counts, K=2, tol=100)
 save(topic_clus, file="../processed_data/maptpx-runs/topic-clus-pooled-moderns-2.rda")
 
 omega <- topic_clus$omega
@@ -64,7 +64,7 @@ CountClust::StructureGGplot(omega = omega,
                             palette = RColorBrewer::brewer.pal(8, "Accent"),
                             yaxis_label = "Moderns vs Ancients",
                             order_sample = FALSE,
-                            figure_title = paste0("StructurePlot: K=", dim(omega)[2],": pmsignature: withput position information"),
+                            figure_title = paste0("StructurePlot: K=", dim(omega)[2],""),
                             axis_tick = list(axis_ticks_length = .1,
                                              axis_ticks_lwd_y = .1,
                                              axis_ticks_lwd_x = .1,
@@ -74,5 +74,7 @@ CountClust::StructureGGplot(omega = omega,
 
 damageLogo_pos(topic_clus$theta, max_pos=20)
 
+signature_set <- colnames(pooled_counts)
+apply(CountClust::ExtractTopFeatures(topic_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
 
 

@@ -11,7 +11,7 @@ clubbed_counts <- clubbed_counts[-28,];
 
 filtered_counts <- filter_signatures_by_location(clubbed_counts, max_pos = 15, flanking_bases = 2)
 
-topic_clus <- maptpx::topics(filtered_counts, K=2, tol=10)
+topic_clus <- maptpx::topics(filtered_counts, K=3, tol=10)
 
 
 names <- rownames(clubbed_counts);
