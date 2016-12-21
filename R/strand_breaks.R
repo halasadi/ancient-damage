@@ -157,3 +157,67 @@ aRchaic::gridPCA_signatures(right_strand_breaks, factor(labs), normalize = TRUE)
 all_strand_breaks <- cbind(left_strand_breaks, right_strand_breaks)
 aRchaic::gridPCA_signatures(all_strand_breaks, factor(labs), normalize = TRUE)
 
+omega_left <- t(apply(left_strand_breaks, 1, function(x) return(x/sum(x))));
+#omega_left <- left_strand_breaks
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega_left))),
+  tissue_label = factor(labs)
+)
+
+rownames(omega_left) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega_left,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = paste0("Composition of nucleotides at left strand breaks"),
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+
+omega_right <- t(apply(right_strand_breaks, 1, function(x) return(x/sum(x))));
+#omega_left <- left_strand_breaks
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega_right))),
+  tissue_label = factor(labs)
+)
+
+rownames(omega_right) <- annotation$sample_id;
+
+CountClust::StructureGGplot(omega = omega_right,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = paste0("Composition of nucleotides at right strand breaks"),
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
+
+library(dplyr)
+omega_left_filt <- tbl_df(as.matrix(left_strand_breaks)) %>% mutate(labs) %>% group_by(labs) %>% summarise_each(funs(sum)) %>% as.data.frame()
+
+mat <- as.matrix(omega_left_filt[,-1])
+mat <- t(mat)
+colnames(mat) <- omega_left_filt[,1]
+
+library(Logolas)
+logomaker(mat, cols= RColorBrewer::brewer.pal(dim(mat)[1],name = "Spectral"), ic.scale = FALSE)
+
+
+omega_right_filt <- tbl_df(as.matrix(right_strand_breaks)) %>% mutate(labs) %>% group_by(labs) %>% summarise_each(funs(sum)) %>% as.data.frame()
+
+mat <- as.matrix(omega_right_filt[,-1])
+mat <- t(mat)
+colnames(mat) <- omega_right_filt[,1]
+
+library(Logolas)
+logomaker(mat, cols= RColorBrewer::brewer.pal(dim(mat)[1],name = "Spectral"), ic.scale = FALSE)
