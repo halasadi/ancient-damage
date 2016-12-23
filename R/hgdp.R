@@ -39,7 +39,27 @@ pos <- factor(pos, levels = 0:22)
 signatures <- mat;
 signature_pos <- cbind.data.frame(signatures, pos)
 
-out <- topics(HGDPmoderns_clubbed, K=2, type="independent", signatures = signature_pos)
+out <- topics(HGDPmoderns_clubbed, K=2, type="full", signatures = signature_pos)
+
+omega <- out$omega
+labs <- rep("hgdp", dim(omega)[1])
+
+annotation <- data.frame(
+  sample_id = paste0("X", c(1:NROW(omega))),
+  tissue_label = factor(labs)
+)
+
+CountClust::StructureGGplot(omega = omega,
+                            annotation = annotation,
+                            palette = RColorBrewer::brewer.pal(8, "Accent"),
+                            yaxis_label = "Moderns vs Ancients",
+                            order_sample = FALSE,
+                            figure_title = paste0("StructurePlot: K=", dim(omega)[2],""),
+                            axis_tick = list(axis_ticks_length = .1,
+                                             axis_ticks_lwd_y = .1,
+                                             axis_ticks_lwd_x = .1,
+                                             axis_label_size = 7,
+                                             axis_label_face = "bold"))
 
 
 
