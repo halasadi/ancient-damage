@@ -26,3 +26,16 @@ out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 
 save(out,
      file="../processed_data/sherpa2017.rda")
+
+
+dir <- "../data/1000Gmoderns/";
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
+save(out,
+     file="../processed_data/1000Gmoderns-counts-table.rda")
+
+
+dir <- "../data/HGDPmoderns/";
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
+save(out,
+     file="../processed_data/HGDPmoderns-counts-table.rda")
+
