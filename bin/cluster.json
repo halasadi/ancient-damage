@@ -2,8 +2,8 @@
     "__default__":
     {
 	"time" : "10:00:00",
-	"mem": "1G",
-	"out": "default-%j.out",
-	"err": "default-%j.err"
+	"mem": "8G",
+	"out": "ancientdamage-%j.out",
+	"err": "ancientdamage-%j.err"
     }
 }

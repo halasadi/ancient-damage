@@ -1,63 +1,80 @@
-import pysam
+from pyfaidx import Fasta
 import csv
+import pysam
 import argparse as arg
-
-def find_substitutions(aligned_pairs):
-    inds = ()
-    for i in range(0, len(aligned_pairs)):
-        if (aligned_pairs[i][2] is not None):
-            if (aligned_pairs[i][2].islower()):
-                inds = inds + (i,)
-    return(inds)
-
-
-### "AAG->TCC" 
-def get_pattern(ind, aligned_pairs, seq):
-    ref = aligned_pairs[ind][2].upper()
-    mut = seq[ind]
-    patt = seq[ind-2] + seq[ind-1] + ref + '->' + mut + seq[ind+1] + seq[ind+2]
-    return(patt)
 
 
 MIN_BQ_SCORE = 20
+MIN_MQ_SCORE = 30
+
+def find_substitutions(read, chr, reference):
+    ref_pos = read.get_reference_positions(full_length=True)
+    align_qualities = read.query_qualities
+    seq = read.query_sequence
+
+    mut = ()
+    posg = ()
+    posr = ()
+    for i in range(len(ref_pos)):
+        if (ref_pos[i] is None or seq[i] is None):
+            continue
+        if (align_qualities[i] is None or align_qualities[i] < MIN_BQ_SCORE):
+            continue
+        if (i < read.qstart or i > read.qend):
+            continue
+        ref = reference[(chr-1)][ref_pos[i]]
+        bp = seq[i]
+        if (ref != bp):
+            mut  = mut + (bp,)
+            posg = posg + (ref_pos[i],)
+            posr = posr + (i,)
+    return((mut, posg, posr))
 
 if __name__ == '__main__':
-
     parser = arg.ArgumentParser()
-    parser.add_argument("-f", "--fname", required=True, help="bam file")
+    parser.add_argument("-b", "--bam", required=True, help="bam file")
+    parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
+    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
     args = parser.parse_args()
-    
-    samfile = pysam.AlignmentFile(args.fname, "rb") 
 
-    ### for now use a dictionary
-    ### "AAG->TCC" is a key
-    ### and the amount of such occurences is the value
+    ## ../data/T004_all_chr.bam
+    samfile = pysam.AlignmentFile(args.bam, "rb")
+    ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
+    fastafile = Fasta(args.fasta, as_raw = True)
+
     patternsDict = {}
 
-    for read in samfile.fetch():
-        NM = read.get_tag('NM')
-        if (NM > 0):
-            seq = read.seq
-            aligned_pairs = read.get_aligned_pairs(with_seq=True)
-            inds = find_substitutions(aligned_pairs)
-            for ind in inds:
-                # make sure that mutation has two flanking base pairs
-                # and that it's a substitution
-                mut = seq[aligned_pairs[ind][0]]
-                if (ind < 2 or ind > (len(seq)-3) or mut == 'N'):
-                    continue
-                quality_scores = read.query_qualities
-                if (quality_scores[ind-2] < MIN_BQ_SCORE or quality_scores[ind-1] < MIN_BQ_SCORE or quality_scores[ind] < MIN_BQ_SCORE or quality_scores[ind+1] < MIN_BQ_SCORE or quality_scores[ind+2] < MIN_BQ_SCORE):
-                    continue
-                patt = get_pattern(ind, aligned_pairs, seq)
-                if patt in patternsDict:
-                    patternsDict[patt] += 1
+    chrs = [i for i in range(1,23)]
+    
+    for chr in chrs:
+        
+        for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
+            if (read.is_unmapped or read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
+                continue
+
+            (mut, posg, posr) = find_substitutions(read, chr, fastafile)
+            
+            for i in range(len(posg)):
+                start = posg[i]-2
+                end = posg[i]+2
+                ref = fastafile[(chr-1)][start:(end+1)]
+                patt = ref[0:3] + '->' + mut[i] + ref[3:5]
+
+                mutStart = posr[i] - read.qstart
+                # read.qend is not 0-based
+                mutEnd = (read.qend-1) - posr[i]
+                val = (patt, mutStart, mutEnd)
+
+                if val in patternsDict:
+                    patternsDict[val] += 1
                 else:
-                    patternsDict[patt] = 1
+                    patternsDict[val] = 1
 
     # write to file
     with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
-            writer.writerow([key, value])
+            writer.writerow([key[0], key[1], key[2], value])
+
+
