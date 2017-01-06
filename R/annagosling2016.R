@@ -274,7 +274,6 @@ annotation <- data.frame(
   sample_id = paste0("X", c(1:NROW(omega))),
   tissue_label = factor(labs_reduced)
 )
-
 rownames(omega) <- annotation$sample_id;
 
 CountClust::StructureGGplot(omega = omega,
