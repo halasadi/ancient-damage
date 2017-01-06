@@ -16,7 +16,7 @@ In this script, we observe whether the supervised topic model approach on Modern
 library(slam)
 library(maptpx)
 library(devtools)
-install_github("kkdey/classtpx")
+#install_github("kkdey/classtpx")
 library(classtpx)
 library(CountClust)
 ```
