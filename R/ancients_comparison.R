@@ -29,7 +29,7 @@ gosling_ancient_filtered_counts <- gosling_filtered_counts[-control_indices,]
 matched_names <- intersect(colnames(gosling_ancient_filtered_counts),
                            intersect(colnames(sardinia_filtered_counts), colnames(sherpa_filtered_counts)))
 
-gosling_filtered_counts_2 <- gosling_filtered_counts[,match(matched_names, colnames(gosling_filtered_counts))]
+gosling_filtered_counts_2 <- gosling_ancient_filtered_counts[,match(matched_names, colnames(gosling_ancient_filtered_counts))]
 sherpa_filtered_counts_2 <- sherpa_filtered_counts[,match(matched_names, colnames(sherpa_filtered_counts))]
 sardinia_filtered_counts_2 <- sardinia_filtered_counts[,match(matched_names, colnames(sardinia_filtered_counts))]
 
@@ -41,8 +41,42 @@ labs <- c(rep("Gosling-ancient", dim(gosling_filtered_counts_2)[1]),
 
 gridPCA_signatures(pooled_counts, factor(labs))
 
+
+signature_set <- colnames(pooled_counts)
+sig_split <- t(sapply(1:length(signature_set), function(x) return(strsplit(signature_set[x], "")[[1]][1:8])))
+new_sig_split <- matrix(0, dim(sig_split)[1], 5);
+new_sig_split[,1] <- sig_split[,1]
+new_sig_split[,2] <- sig_split[,2]
+new_sig_split[,3] <- sapply(1:length(signature_set), function(x) return(paste(sig_split[x,3:6], collapse="")))
+new_sig_split[,4] <- sig_split[,7]
+new_sig_split[,5] <- sig_split[,8]
+
+levels(new_sig_split[,1]) <- c("0", "1", "2", "3", "4")
+
+pos <- t(sapply(1:length(signature_set), function(x)
+{
+  y = strsplit(signature_set[x], "")[[1]]
+  return(paste(y[10:length(y)], collapse=""))
+}))
+
+
+
+mat <- matrix(0, dim(new_sig_split)[1], dim(new_sig_split)[2])
+for(k in 1:dim(new_sig_split)[2]){
+  temp <- as.factor(new_sig_split[,k])
+  mat[,k] <- as.numeric(as.matrix(plyr::mapvalues(temp, from = levels(temp), to = 0:(length(levels(temp))-1))))
+}
+
+pos <- as.numeric(pos)
+pos <- pos - min(pos)
+pos <- factor(pos, levels = 0:20)
+
+signatures <- mat;
+signature_pos <- cbind.data.frame(signatures, pos)
+
+
 library(CountClust)
-topic_clus <- maptpx::topics(pooled_counts, K=3, tol=100)
+topic_clus <- maptpx::topics(pooled_counts, K=3, tol=100, model="independent", signatures = signature_pos)
 save(topic_clus, file="../processed_data/maptpx-runs/topic-clus-pooled-ancients-gosling-sherpa-sardinia-3.rda")
 
 

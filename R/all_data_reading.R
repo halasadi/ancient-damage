@@ -33,6 +33,15 @@ out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 save(out,
      file="../processed_data/1000Gmoderns-counts-table.rda")
 
+dir <- "../data/I_data/"
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
+save(out,
+     file="../processed_data/Idata-counts-table.rda")
+
+dir <- "../data/RISE_data/"
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
+save(out,
+     file="../processed_data/RISE-counts-table.rda")
 
 dir <- "../data/HGDPmoderns/";
 out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
