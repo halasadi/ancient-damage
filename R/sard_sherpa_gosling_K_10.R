@@ -61,6 +61,8 @@ filtered_hgdp <- hgdp_filtered_counts[, match(pooled_names, colnames(hgdp_filter
 
 pooled_data <- rbind(filtered_gossling, filtered_sherpa, filtered_sardinia, filtered_hgdp)
 
+
+
 signature_set <- colnames(pooled_data)
 sig_split <- t(sapply(1:length(signature_set), function(x) return(strsplit(signature_set[x], "")[[1]][1:8])))
 new_sig_split <- matrix(0, dim(sig_split)[1], 5);
@@ -69,6 +71,9 @@ new_sig_split[,2] <- sig_split[,2]
 new_sig_split[,3] <- sapply(1:length(signature_set), function(x) return(paste(sig_split[x,3:6], collapse="")))
 new_sig_split[,4] <- sig_split[,7]
 new_sig_split[,5] <- sig_split[,8]
+
+#indices_notCtoA <-  which(new_sig_split[,3] != "C->T")
+#pooled_data <- pooled_data[, indices_notCtoA]
 
 levels(new_sig_split[,1]) <- c("0", "1", "2", "3", "4")
 

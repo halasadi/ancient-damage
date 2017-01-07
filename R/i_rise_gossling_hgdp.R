@@ -47,6 +47,11 @@ new_sig_split[,3] <- sapply(1:length(signature_set), function(x) return(paste(si
 new_sig_split[,4] <- sig_split[,7]
 new_sig_split[,5] <- sig_split[,8]
 
+indices_notCtoA <-  which(new_sig_split[,3] != "C->T")
+pooled_data <- pooled_data[, indices_notCtoA]
+pooled_data <- filter_signatures_wo_location(pooled_data)
+
+
 levels(new_sig_split[,1]) <- c("0", "1", "2", "3", "4")
 
 pos <- t(sapply(1:length(signature_set), function(x)
@@ -70,10 +75,11 @@ pos <- factor(pos, levels = 0:22)
 signatures <- mat;
 signature_pos <- cbind.data.frame(signatures, pos)
 
-out <- topics(pooled_data, K=10, tol=100, model="independent", signatures = signature_pos)
-save(out, file="../processed_data/maptpx-runs/i-rise-gosling-hgdp-maptpx-independent-K-10.rda")
+out <- topics(pooled_data, K=4, tol=100, model="independent", signatures = signature_pos)
+out <- topics(pooled_data, K=4, tol=10);
+save(out, file="../processed_data/maptpx-runs/i-rise-gosling-hgdp-maptpx-independent-K-4-noCtoT.rda")
 
-out <- get(load("../processed_data/maptpx-runs/i-rise-gosling-hgdp-maptpx-independent-K-10.rda"))
+out <- get(load("../processed_data/maptpx-runs/i-rise-gosling-hgdp-maptpx-independent-K-4-noCtoT.rda"))
 
 labs <- c(rep("Gossling", dim(filtered_gossling)[1]), rep("I", dim(filtered_I)[1]),
           rep("RISE", dim(filtered_RISE)[1]), rep("HGDP", dim(filtered_hgdp)[1]))
@@ -103,7 +109,7 @@ CountClust::StructureGGplot(omega = omega,
 
 
 damageLogo_pos(out$theta)
-
+damageLogo(out$theta)
 
 
 
