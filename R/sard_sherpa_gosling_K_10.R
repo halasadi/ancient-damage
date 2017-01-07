@@ -16,6 +16,22 @@ labs[control_indices] <- "controls"
 
 indices <- which(labs == "ancient")
 
+ancient_names = names[indices]
+pop_names_1 <- as.factor(substring(ancient_names, 8, 8))
+levels(pop_names_1)
+
+levels(pop_names_1) = c("Chokhopani", "Kyang", "Rhirhi", "Mebrak", "Samdzong")
+labs[indices] <- as.character(pop_names_1)
+
+# names <- rownames(gossling_data_clubbed);
+# control_indices <- c(grep("EXN", names), grep("Libneg", names), grep("PCRneg", names))
+#
+# labs <- character();
+# labs <- rep("ancient", dim(gossling_data_clubbed)[1])
+# labs[control_indices] <- "controls"
+#
+# indices <- which(labs == "ancient")
+
 gossling_ancients <- gossling_data_clubbed[indices, ]
 gossling_filtered_counts <- filter_signatures_by_location(gossling_ancients, max_pos=20, flanking_bases = 2)
 
@@ -28,15 +44,22 @@ sardinia_data <- get(load("../processed_data/sardinia2017.rda"))
 sardinia_data <- club_signature_counts(sardinia_data)
 sardinia_filtered_counts <- filter_signatures_by_location(sardinia_data, max_pos=20, flanking_bases = 2)
 
+hgdp_data <- get(load("../processed_data/HGDPmoderns-counts-table.rda"))
+hgdp_data <- club_signature_counts(hgdp_data)
+hgdp_filtered_counts <- filter_signatures_by_location(hgdp_data, max_pos=20, flanking_bases = 2)
+
 
 pooled_names <- intersect(colnames(sherpa_filtered_counts),
-                          intersect(colnames(sardinia_filtered_counts), colnames(gossling_filtered_counts)))
+                          intersect(colnames(sardinia_filtered_counts),
+                                    intersect( colnames(hgdp_filtered_counts), colnames(gossling_filtered_counts))))
+
 
 filtered_gossling <- gossling_filtered_counts[, match(pooled_names, colnames(gossling_filtered_counts))]
 filtered_sherpa <- sherpa_filtered_counts[, match(pooled_names, colnames(sherpa_filtered_counts))]
 filtered_sardinia <- sardinia_filtered_counts[, match(pooled_names, colnames(sardinia_filtered_counts))]
+filtered_hgdp <- hgdp_filtered_counts[, match(pooled_names, colnames(hgdp_filtered_counts))]
 
-pooled_data <- rbind(filtered_gossling, filtered_sherpa, filtered_sardinia)
+pooled_data <- rbind(filtered_gossling, filtered_sherpa, filtered_sardinia, filtered_hgdp)
 
 signature_set <- colnames(pooled_data)
 sig_split <- t(sapply(1:length(signature_set), function(x) return(strsplit(signature_set[x], "")[[1]][1:8])))
@@ -70,16 +93,17 @@ pos <- factor(pos, levels = 0:20)
 signatures <- mat;
 signature_pos <- cbind.data.frame(signatures, pos)
 
-out <- maptpx::topics(pooled_data, K=2, tol=100, model="independent", signatures = signature_pos)
+out <- maptpx::topics(pooled_data, K=4, tol=100, model="independent", signatures = signature_pos)
 #out <- topics(pooled_data, K=3, tol=100, model="full")
 
-save(out, file="../processed_data/maptpx-runs/sards-gosling-sherpa-maptpx-independent-K-2.rda")
+save(out, file="../processed_data/maptpx-runs/sards-gosling-sherpa-hgdp-maptpx-independent-K-4.rda")
 
-out <- get(load("../processed_data/maptpx-runs/sards-gosling-sherpa-maptpx-independent-K-10.rda"))
+out <- get(load("../processed_data/maptpx-runs/sards-gosling-sherpa-hgdp-maptpx-independent-K-4.rda"))
 
-labs <- c(rep("Gossling", dim(filtered_gossling)[1]),
+labs1 <- c(labs[indices],
           rep("Sherpa", dim(filtered_sherpa)[1]),
-          rep("Sardinians", dim(filtered_sardinia)[1]))
+          rep("Sardinia", dim(filtered_sardinia)[1]),
+          rep("HGDP", dim(filtered_hgdp)[1]))
 
 omega <- out$omega
 
@@ -89,7 +113,8 @@ cols1 <- c("red","blue","darkgoldenrod1","cyan","firebrick", "green",
 
 annotation <- data.frame(
   sample_id = paste0("X", c(1:NROW(omega))),
-  tissue_label = factor(labs)
+  tissue_label = factor(labs1, levels = c("Chokhopani", "Kyang", "Rhirhi", "Mebrak", "Samdzong",
+                                          "Sherpa", "Sardinia", "HGDP"))
 )
 
 CountClust::StructureGGplot(omega = omega,
@@ -105,7 +130,7 @@ CountClust::StructureGGplot(omega = omega,
                                              axis_label_face = "bold"))
 
 
-damageLogo_pos(out$theta)
+damageLogo_pos(out$theta, renyi_alpha = 100)
 
 
 

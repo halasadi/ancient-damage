@@ -20,9 +20,10 @@
 vcf_patterns_data <- get(load("../data/vcf_moderns/vcf_patterns_prop_across_chr.rda"))
 
 library(dplyr)
-
-tbl1 <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% select(pop, percentage) %>% group_by(pop) %>% summarise(sumprop=sum(percentage))
-tbl2 <- tbl_df(vcf_patterns_data) %>% filter(sig == "TTA->TTT") %>% select(pop, percentage) %>% group_by(pop) %>% summarise(sumprop=sum(percentage))
+library(plyr)
+temp <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% group_by(pop) %>% select(pop, percentage) %>% group_by(pop) %>% summarize(sumprop=sum(percentage))
+tbl1 <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% select(pop, percentage) %>% group_by(pop) %>% summarise(sumprop=mean(percentage))
+tbl2 <- tbl_df(vcf_patterns_data) %>% filter(sig == "TTA->TTT") %>% select(pop, percentage) %>% group_by(pop)
 par(mfrow=c(1,2))
 
 library(readxl)

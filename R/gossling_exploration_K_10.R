@@ -42,7 +42,7 @@ signature_pos <- cbind.data.frame(signatures, pos)
 out <- topics(gossling_data_clubbed, K=5, tol=100, model="independent", signatures = signature_pos)
 save(out, file="../processed_data/maptpx-runs/gossling2016-maptpx-independent-K-5.rda")
 
-out <- get(load("../processed_data/maptpx-runs/gossling2016-maptpx-independent-K-3.rda"))
+out <- get(load("../processed_data/maptpx-runs/gossling2016-maptpx-independent-K-2.rda"))
 
 names <- rownames(gossling_data_clubbed);
 control_indices <- c(grep("EXN", names), grep("Libneg", names), grep("PCRneg", names))

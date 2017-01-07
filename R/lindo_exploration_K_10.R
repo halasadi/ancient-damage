@@ -52,7 +52,7 @@ signature_pos <- cbind.data.frame(signatures, pos)
 out <- topics(lindo_pooled, K=5, tol=100, model="independent", signatures = signature_pos)
 save(out, file="../processed_data/maptpx-runs/lindo2016-maptpx-independent-K-5.rda")
 
-out <- get(load("../processed_data/maptpx-runs/lindo2016-maptpx-independent-K-5.rda"))
+out <- get(load("../processed_data/maptpx-runs/lindo2016-maptpx-independent-K-3.rda"))
 
 labs <- c(rep("Ancient", 25), rep("Moderns", 25))
 omega <- out$omega
@@ -79,29 +79,29 @@ CountClust::StructureGGplot(omega = omega,
                                              axis_label_face = "bold"))
 
 
-damageLogo_pos(out$theta)
+damageLogo_pos(out$theta, ic.scale = TRUE, renyi_alpha = 10)
 
-# x <- do.call(rbind, lapply(rownames(out$theta), function(x) return(strsplit(as.character(x), "")[[1]][1:8])))
-#
-# theta <- out$theta[,1:2]
-# sig_names = NULL
-# ic.scale=TRUE
-# max_pos = 15
-# flanking_bases=2
-# yscale_change = TRUE
-# xaxis=TRUE
-# yaxis=TRUE
-# xaxis_fontsize=10
-# xlab_fontsize=15
-# y_fontsize=15
-# mut_width=2
-# start=0.0001
-# pop_names=paste0("Cluster ",1:dim(theta)[2])
-# logoport_x = 0.35
-# logoport_y= 0.5
-# logoport_width= 0.35
-# logoport_height= 0.5
-# lineport_x = 0.95
-# lineport_y=0.75
-# lineport_width=0.25
-# lineport_height=0.45
+x <- do.call(rbind, lapply(rownames(out$theta), function(x) return(strsplit(as.character(x), "")[[1]][1:8])))
+
+theta <- out$theta
+sig_names = NULL
+ic.scale=TRUE
+max_pos = 15
+flanking_bases=2
+yscale_change = TRUE
+xaxis=TRUE
+yaxis=TRUE
+xaxis_fontsize=10
+xlab_fontsize=15
+y_fontsize=15
+mut_width=2
+start=0.0001
+pop_names=paste0("Cluster ",1:dim(theta)[2])
+logoport_x = 0.35
+logoport_y= 0.5
+logoport_width= 0.35
+logoport_height= 0.5
+lineport_x = 0.95
+lineport_y=0.75
+lineport_width=0.25
+lineport_height=0.45
