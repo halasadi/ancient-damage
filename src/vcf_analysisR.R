@@ -20,10 +20,12 @@
 vcf_patterns_data <- get(load("../data/vcf_moderns/vcf_patterns_prop_across_chr.rda"))
 
 library(dplyr)
+flights %>% group_by(year, month, day) %>% select(arr_delay, dep_delay) %>% dplyr::summarise(arr=mean(arr_delay, na.rm=TRUE))
+library(dplyr)
 library(plyr)
-temp <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% group_by(pop) %>% select(pop, percentage) %>% group_by(pop) %>% summarize(sumprop=sum(percentage))
-tbl1 <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% select(pop, percentage) %>% group_by(pop) %>% summarise(sumprop=mean(percentage))
-tbl2 <- tbl_df(vcf_patterns_data) %>% filter(sig == "TTA->TTT") %>% select(pop, percentage) %>% group_by(pop)
+#temp <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% select(pop, percentage) %>% group_by(pop) %>% dplyr::summarise(sumprop=mean(percentage))
+tbl1 <- tbl_df(vcf_patterns_data) %>% filter(sig == "AAT->AAA") %>% select(pop, percentage) %>% group_by(pop) %>% dplyr::summarise(sumprop=mean(percentage))
+tbl2 <- tbl_df(vcf_patterns_data) %>% filter(sig == "TTA->TTT") %>% select(pop, percentage) %>% group_by(pop) %>% dplyr::summarise(sumprop=mean(percentage))
 par(mfrow=c(1,2))
 
 library(readxl)

@@ -4,3 +4,4 @@ data/*
 summary_data/
 rda/*
 *.DS_Store
+processed_data/maptpx-runs/

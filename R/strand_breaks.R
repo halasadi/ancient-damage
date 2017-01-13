@@ -53,7 +53,7 @@ save(str, file="../processed_data/strand-breaks-lindoancients.rda")
 files <- list.files("../data/1000Gmoderns/")
 str <- list()
 for(m in 1:length(files)){
-  str[[m]] <- strand_breaks_composition(paste0("../data/1000Gmoderns/", files[m]))
+  str[[paste0(files[m])]] <- strand_breaks_composition(paste0("../data/1000Gmoderns/", files[m]))
   cat("at iteration", m, "\n")
 }
 
@@ -70,6 +70,23 @@ for(m in 1:length(files)){
 
 save(str, file="../processed_data/strand-breaks-sherpa.rda")
 
+files <- list.files("../data/I_data/")
+str <- list()
+for(m in files){
+  str[[m]] <- strand_breaks_composition(paste0("../data/I_data/", m))
+  cat("at iteration", m, "\n")
+}
+
+save(str, file="../processed_data/strand-breaks-I.rda")
+
+files <- list.files("../data/RISE_data/")
+str <- list()
+for(m in files){
+  str[[m]] <- strand_breaks_composition(paste0("../data/RISE_data/", m))
+  cat("at iteration", m, "\n")
+}
+
+save(str, file="../processed_data/strand-breaks-RISE.rda")
 
 
 #############################   Strand breaks analysis  ##############################################

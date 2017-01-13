@@ -1,5 +1,4 @@
 
-
 library(aRchaic)
 gossling_data <- get(load("../processed_data/annagosling2016-counts-table.rda"))
 system.time(gossling_data_clubbed <- club_signature_counts(gossling_data))
@@ -21,21 +20,22 @@ control_indices <- c(grep("EXN", names), grep("Libneg", names), grep("PCRneg", n
 labs <- character();
 labs <- rep("ancient", dim(filtered_gossling_2)[1])
 labs[control_indices] <- "controls"
+labs <- c(labs, rep("1000g", dim(filtered_moderns_2)[1]))
 
 indices <- which(labs == "ancient")
 
 gossling_ancients <- filtered_gossling_2[indices, ]
 
-ancient_names = names[indices]
-pop_names_1 <- as.factor(substring(ancient_names, 8, 8))
-levels(pop_names_1)
-
-levels(pop_names_1) = c("Chokhopani", "Kyang", "Rhirhi", "Mebrak", "Samdzong")
-labs[indices] <- as.character(pop_names_1)
+# ancient_names = names[indices]
+# pop_names_1 <- as.factor(substring(ancient_names, 8, 8))
+# levels(pop_names_1)
+#
+# levels(pop_names_1) = c("Chokhopani", "Kyang", "Rhirhi", "Mebrak", "Samdzong")
+# labs[indices] <- as.character(pop_names_1)
 
 pooled_data <- rbind(filtered_gossling_2, filtered_moderns_2)
 
-pooled_data <- filtered_gossling_2
+#pooled_data <- filtered_gossling_2
 
 signature_set <- colnames(pooled_data)
 sig_split <- t(sapply(1:length(signature_set), function(x) return(strsplit(signature_set[x], "")[[1]][1:8])))
@@ -70,10 +70,10 @@ signatures <- mat;
 signature_pos <- cbind.data.frame(signatures, pos)
 
 
-out <- topics(pooled_data, K=3, tol=100, model="independent", signatures = signature_pos)
-save(out, file="../processed_data/maptpx-runs/gosling2016-maptpx-independent-K-3.rda")
+out <- topics(pooled_data, K=2, tol=100, model="independent", signatures = signature_pos)
+save(out, file="../processed_data/maptpx-runs/gosling2016-1000g-maptpx-independent-K-2.rda")
 
-out <- get(load("../processed_data/maptpx-runs/gosling2016-maptpx-independent-K-3.rda"))
+out <- get(load("../processed_data/maptpx-runs/gosling2016-1000g-maptpx-independent-K-2.rda"))
 
 # pop_names_1 <- as.factor(substring(, 1, 1))
 # levels(pop_names_1)
@@ -98,7 +98,7 @@ cols1 <- c("red","blue","darkgoldenrod1","cyan","firebrick", "green",
 
 annotation <- data.frame(
   sample_id = paste0("X", c(1:NROW(omega))),
-  tissue_label = factor(labs, levels=c("Chokhopani", "Kyang", "Rhirhi", "Mebrak", "Samdzong", "controls"))
+  tissue_label = factor(labs)
 )
 
 CountClust::StructureGGplot(omega = omega,

@@ -8,6 +8,8 @@ temp <- club_signature_counts(sardinia_counts)
 sardinia_counts_CtoT <- filter_signatures_per_substitution(temp, pattern="C->T", use_prop = FALSE)
 sardinia_counts_CtoT <- filter_signatures_only_location(sardinia_counts_CtoT, max_pos = 10)
 
+
+
 lindo_ancients_counts <- get(load("../processed_data/lindo2016ancients-counts-table.rda"))
 temp <- club_signature_counts(lindo_ancients_counts)
 lindo_ancients_counts_CtoT <- filter_signatures_per_substitution(temp, pattern="C->T", use_prop=FALSE)
@@ -55,6 +57,7 @@ RISE_counts <- get(load("../processed_data/RISE-counts-table.rda"))
 temp <- club_signature_counts(RISE_counts)
 RISE_counts_CtoT <- filter_signatures_per_substitution(temp, pattern="C->T", use_prop = FALSE)
 RISE_counts_CtoT <- filter_signatures_only_location(RISE_counts_CtoT, max_pos = 10)
+
 
 
 
@@ -154,7 +157,7 @@ pooled_data <- rbind(trainX, testX);
 class_labs <- c(rep(1, dim(trainX1)[1]), rep(2, dim(trainX2)[1]))
 known_samples <- 1:(dim(trainX1)[1] + dim(trainX2)[1])
 
-pooled_data <- floor(10^12*pooled_data);
+#pooled_data <- floor(10^20*pooled_data);
 Topic_clus <- class_topics(
   as.matrix(pooled_data),
   K=2,

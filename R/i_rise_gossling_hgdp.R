@@ -2,7 +2,11 @@
 
 ##################  I + RISE + Gossling + HGDP  ##############################
 
+
+
+
 library(aRchaic)
+
 gossling_data <- get(load("../processed_data/annagosling2016-counts-table.rda"))
 system.time(gossling_data_clubbed <- club_signature_counts(gossling_data))
 gossling_data_clubbed <- gossling_data_clubbed[-28,];
@@ -83,8 +87,9 @@ out <- get(load("../processed_data/maptpx-runs/i-rise-gosling-hgdp-maptpx-indepe
 
 labs <- c(rep("Gossling", dim(filtered_gossling)[1]), rep("I", dim(filtered_I)[1]),
           rep("RISE", dim(filtered_RISE)[1]), rep("HGDP", dim(filtered_hgdp)[1]))
+labs <- labs[1:100]
 
-omega <- out$omega
+omega <- out$omega[1:100, ]
 
 cols1 <- c("red","blue","darkgoldenrod1","cyan","firebrick", "green",
            "hotpink","burlywood","yellow","darkgray","deepskyblue","darkkhaki",

@@ -73,7 +73,7 @@ par(mar=c(2,2,2,2))
 plot(sig_T_AAA_counts, col=cols[as.numeric(factor(labs))], pch=20, main="prop. of AAT->AAA across aDNA sources")
 legend("topright", legend=levels(factor(labs)),fill=cols[1:length(levels(factor(labs)))], cex=0.5)
 
-which(sig_T_AAA_counts > 0.025)
+which(sig_T_AAA_counts > 0.01)
 #########  total damage distribution ##################
 
 

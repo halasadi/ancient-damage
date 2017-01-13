@@ -103,7 +103,7 @@ out <- maptpx::topics(pooled_data, K=4, tol=100, model="independent", signatures
 
 save(out, file="../processed_data/maptpx-runs/sards-gosling-sherpa-hgdp-maptpx-independent-K-4.rda")
 
-out <- get(load("../processed_data/maptpx-runs/sards-gosling-sherpa-hgdp-maptpx-independent-K-4.rda"))
+out <- get(load("../processed_data/maptpx-runs/sards-gosling-sherpa-hgdp-maptpx-independent-K-3.rda"))
 
 labs1 <- c(labs[indices],
           rep("Sherpa", dim(filtered_sherpa)[1]),

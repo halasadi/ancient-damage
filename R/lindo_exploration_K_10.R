@@ -2,6 +2,7 @@
 
 #########  John Lindo moderns + ancients mixed data  ######################
 
+lindo_moderns_metadata <- read.table("../utilities/Lindo_metadata.txt")
 
 lindoancient_data <- get(load("../processed_data/lindo2016ancients-counts-table.rda"))
 lindomoderns_data <- get(load("../processed_data/lindo2016moderns-counts-table.rda"))
@@ -15,6 +16,57 @@ filtered_ancients <- lindoancient_data_clubbed[, match(pooled_names, colnames(li
 filtered_moderns <- lindomoderns_data_clubbed[, match(pooled_names, colnames(lindomoderns_data_clubbed))]
 
 lindo_pooled <- rbind(filtered_ancients, filtered_moderns)
+
+lindo_filtered <- filtered_moderns
+
+par(mfrow=c(2,2))
+
+temp <- filter_signatures_only_location(lindo_filtered, max_pos = 20)
+
+
+modern_names <- as.character(sapply(rownames(lindo_filtered), function(x) strsplit(x, "[_]")[[1]][1]))
+
+par(mfrow=c(5,5))
+for(k in 1:25){
+  plot(1:20, temp[k,]/sum(temp[k,], na.rm=TRUE), col="red", pch=20, main=paste0(modern_names[k], "_", lindo_moderns_metadata[k,2]), xlab="read position", ylab="prop pattern")
+  axis(1, at=c(2, 5, 10, 15, 20), c(2, 5, 10, 15, 20))
+}
+
+
+
+sum_temp <- colSums(temp)
+sum_temp = sum_temp/sum(sum_temp, na.rm=TRUE)
+
+plot(1:20, sum_temp, col="red", pch=20, main="all patterns", xlab="read position", ylab="prop of pattern")
+axis(1, at=c(2, 5, 10, 15, 20), c(2, 5, 10, 15, 20))
+
+
+
+temp <- filter_signatures_per_substitution(lindo_filtered, pattern="T->C", use_prop = FALSE)
+temp <- filter_signatures_only_location(temp, max_pos = 20)
+sum_temp <- colSums(temp)
+sum_temp = sum_temp/sum(sum_temp, na.rm=TRUE)
+
+plot(1:20, sum_temp, col="red", pch=20, main="pattern T->C", xlab="read position", ylab="prop of pattern")
+axis(1, at=c(2, 5, 10, 15, 20), c(2, 5, 10, 15, 20))
+
+
+temp <- filter_signatures_per_substitution(lindo_filtered, pattern="C->T", use_prop = FALSE)
+temp <- filter_signatures_only_location(temp, max_pos = 20)
+sum_temp <- colSums(temp)
+sum_temp = sum_temp/sum(sum_temp, na.rm=TRUE)
+
+plot(1:20, sum_temp, col="red", pch=20, main="pattern C->T", xlab="read position", ylab="prop of pattern")
+axis(1, at=c(2, 5, 10, 15, 20), c(2, 5, 10, 15, 20))
+
+temp <- filter_signatures_per_substitution(lindo_filtered, pattern="C->A", use_prop = FALSE)
+temp <- filter_signatures_only_location(temp, max_pos = 20)
+sum_temp <- colSums(temp)
+sum_temp = sum_temp/sum(sum_temp, na.rm=TRUE)
+plot(1:20, sum_temp, col="red", pch=20, main="pattern C->A", xlab="read position", ylab="prop of pattern")
+axis(1, at=c(2, 5, 10, 15, 20), c(2, 5, 10, 15, 20))
+
+
 
 signature_set <- colnames(lindo_pooled)
 sig_split <- t(sapply(1:length(signature_set), function(x) return(strsplit(signature_set[x], "")[[1]][1:8])))
