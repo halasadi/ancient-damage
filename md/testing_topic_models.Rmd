@@ -29,8 +29,8 @@ We present a simulation pattern for $K=3$. There are 6 features corresponding to
 ### Design
 
 ```{r}
-omega_modern <- c(0.8, 0.1, 0.1);
-omega_ancient_1 <- c(0.6, 0.3, 0.1);
+omega_modern <- c(1.0, 0, 0);
+omega_ancient_1 <- c(0.7, 0.2, 0.1);
 omega_ancient_2 <- c(0.7, 0.1, 0.2);
 
 theta1 <- rep(1/6,6);  ## common pattern - equal weights on all damages 

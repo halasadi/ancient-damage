@@ -3,7 +3,7 @@
 ##############    Anna Gosling 2016 DNA damage data study  ###########################
 
 dir <- "../data/AnnaGosling2016data/";
-out <- aggregate_bin_counts(dir, breaks = c(-1,5,10,15))
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 save(out,
      file="../processed_data/annagosling2016-counts-table.rda")
 
@@ -274,7 +274,6 @@ annotation <- data.frame(
   sample_id = paste0("X", c(1:NROW(omega))),
   tissue_label = factor(labs_reduced)
 )
-
 rownames(omega) <- annotation$sample_id;
 
 CountClust::StructureGGplot(omega = omega,

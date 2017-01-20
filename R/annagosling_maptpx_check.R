@@ -65,8 +65,14 @@ CountClust::StructureGGplot(omega = omega,
                                              axis_ticks_lwd_x = .1,
                                              axis_label_size = 7,
                                              axis_label_face = "bold"))
+
+plot.new()
+damageLogo(topics_clus$theta)
+
+
 signature_set <- colnames(filtered_counts)
-apply(CountClust::ExtractTopFeatures(topics_clus$theta, top_features = 10, method="poisson", options="min"), c(1,2), function(x) signature_set[x])
+apply(CountClust::ExtractTopFeatures(topics_clus$theta, top_features = 10,
+                                     method="poisson", options="min"), c(1,2), function(x) signature_set[x])
 
 
 

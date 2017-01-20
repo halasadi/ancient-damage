@@ -3,3 +3,7 @@ data/*
 *csv
 summary_data/
 rda/*
+*.DS_Store
+processed_data/maptpx-runs/
+processed_data/*
+utilities/T004_all_chr*
