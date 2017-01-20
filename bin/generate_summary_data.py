@@ -30,11 +30,19 @@ def find_substitutions(read, chr, reference):
             posr = posr + (i,)
     return((mut, posg, posr))
 
+
+def get_flanking_bases(read, chr, reference):
+    ref_pos = read.get_reference_positions()
+    leftflank  = reference[(chr-1)][ref_pos[0]-1]
+    rightflank = reference[(chr-1)][ref_pos[-1]+1]
+    return((leftflank, rightflank))
+
+
 if __name__ == '__main__':
     parser = arg.ArgumentParser()
     parser.add_argument("-b", "--bam", required=True, help="bam file")
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
-    parser.add_argument("-o", "--out", required=True, help="out file")
+    parser.add_argument("-o", "--out", required=True, help="prefix of out files")
     parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
     args = parser.parse_args()
 
@@ -44,7 +52,9 @@ if __name__ == '__main__':
     fastafile = Fasta(args.fasta, as_raw = True)
 
     patternsDict = {}
-
+    leftFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T':0, 'N': 0}
+    rightFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T': 0, 'N': 0}
+    
     chrs = [i for i in range(1,23)]
     
     for chr in chrs:
@@ -54,7 +64,23 @@ if __name__ == '__main__':
                 continue
 
             (mut, posg, posr) = find_substitutions(read, chr, fastafile)
+
+            if (read.is_reverse):
+                strando = '-'
+            else:
+                strando = '+'
+
+            try:
+                (leftflank, rightflank) = get_flanking_bases(read, chr, fastafile)
+                if (leftflank in leftFlankingDict and rightflank in rightFlankingDict):
+                    leftFlankingDict[leftflank] += 1
+                    rightFlankingDict[rightflank] += 1
+            except IndexError:
+                leftflank = 'N'
+                rightflank = 'N'
+                ## do nothing
             
+                
             for i in range(len(posg)):
                 start = posg[i]-2
                 end = posg[i]+2
@@ -64,7 +90,7 @@ if __name__ == '__main__':
                 mutStart = posr[i] - read.qstart
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - posr[i]
-                val = (patt, mutStart, mutEnd)
+                val = (patt, mutStart, mutEnd, strando)
 
                 if val in patternsDict:
                     patternsDict[val] += 1
@@ -72,9 +98,19 @@ if __name__ == '__main__':
                     patternsDict[val] = 1
 
     # write to file
-    with open(args.out, 'w') as csv_file:
+    with open(args.out + '.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
-            writer.writerow([key[0], key[1], key[2], value])
+            writer.writerow([key[0], key[1], key[2], key[3], value])
 
+
+    with open(args.out + '.leftflank.csv', 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in leftFlankingDict.items():
+            writer.writerow([key, value])
+
+    with open(args.out + '.rightflank.csv', 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in rightFlankingDict.items():
+            writer.writerow([key, value])
 
