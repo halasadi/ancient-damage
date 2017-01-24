@@ -21,7 +21,14 @@ def find_substitutions(aligned_pairs):
                 mpos = mpos + (aligned_pairs[i][0],)
                 refs = refs + (aligned_pairs[i][2].upper(),)
                 posg = posg + (aligned_pairs[i][1],)
+                
     return((refs, mpos, posg))
+
+def get_flanking_bases(read, chr, reference):
+    ref_pos = read.get_reference_positions()
+    leftflank  = reference[(chr-1)][ref_pos[0]-1]
+    rightflank = reference[(chr-1)][ref_pos[-1]+1]
+    return((leftflank, rightflank))
 
 
 if __name__ == '__main__':
@@ -38,19 +45,34 @@ if __name__ == '__main__':
     fastafile = Fasta(args.fasta, as_raw = True)
 
     patternsDict = {}
+    leftFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T':0, 'N': 0}
+    rightFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T': 0, 'N': 0}
+    
 
     chrs = [i for i in range(1,23)]
     
     for chr in chrs:
         
         for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
-            if (read.get_tag('NM') == 0 or read.mapping_quality < MIN_MQ_SCORE):
+            if (read.get_tag('NM') == 0 or read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
                 continue
 
             seq = read.query_sequence
             aligned_pairs = read.get_aligned_pairs(with_seq=True)
             (refs, mutPos, posg) = find_substitutions(aligned_pairs)
             mapq = read.query_qualities
+
+            if (read.is_reverse):
+                strando = '-'
+            else:
+                strando = '+'
+
+            (leftflank, rightflank) = get_flanking_bases(read, chr, fastafile)
+
+            if (leftflank in leftFlankingDict and rightflank in rightFlankingDict):
+                leftFlankingDict[leftflank] += 1
+                rightFlankingDict[rightflank] += 1
+            
     
             for i in range(len(mutPos)):
 
@@ -72,7 +94,7 @@ if __name__ == '__main__':
                 mutStart = pos - read.qstart
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - pos
-                val = (patt, mutStart, mutEnd)
+                val = (patt, mutStart, mutEnd, strando)
 
                 if val in patternsDict:
                     patternsDict[val] += 1
@@ -80,9 +102,20 @@ if __name__ == '__main__':
                     patternsDict[val] = 1
 
     # write to file
-    with open(args.out, 'w') as csv_file:
+    with open(args.out + '.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
-            writer.writerow([key[0], key[1], key[2], value])
+            writer.writerow([key[0], key[1], key[2], key[3], value])
+
+
+    with open(args.out + '.leftflank.csv', 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in leftFlankingDict.items():
+            writer.writerow([key, value])
+
+    with open(args.out + '.rightflank.csv', 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in rightFlankingDict.items():
+            writer.writerow([key, value])
 
 

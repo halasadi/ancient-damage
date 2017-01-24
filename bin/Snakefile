@@ -24,10 +24,15 @@ rule call_damage:
         ref = '/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa'
     output:
         'csv/{sample}.q30.csv'
+        #'csv/{sample}.q30.leftflank.csv',
+        #'csv/{sample}.q30.rightflank.csv'
+    params:
+        prefix = 'csv/{sample}.q30' 
     run:
         inp = wildcards.sample
-        if (inp.startswith('RISE') or inp.startswith('ADR') or inp.startswith('I') or inp.startswith('LON') or inp.startswith('SUA')):
-            shell('python bin/generate_summary_data_reference.py -b {input.bam} -o {output} -f {input.ref}')
+        if (inp.startswith('RISE') or inp.startswith('ADR') or inp.startswith('I') or inp.startswith('LON') or
+            inp.startswith('SUA') or inp.startswith('Ust') or inp.startswith('Altai') or inp.startswith('DNK')):
+            shell('python bin/generate_summary_data_tags.py -b {input.bam} -o {params.prefix} -f {input.ref}')
         else:
-            shell('python bin/generate_summary_data_reference.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
+            shell('python bin/generate_summary_data_tags.py -b {input.bam} -o {params.prefix} -f {input.ref} --add-chr')
 
