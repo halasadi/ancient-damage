@@ -24,12 +24,12 @@ def find_substitutions(aligned_pairs):
                 
     return((refs, mpos, posg))
 
-def get_flanking_bases(read, chr, reference):
-    ref_pos = read.get_reference_positions()
-    leftflank  = reference[(chr-1)][ref_pos[0]-1]
-    rightflank = reference[(chr-1)][ref_pos[-1]+1]
-    return((leftflank, rightflank))
 
+def get_bases_strandbreaks(read, chr, reference):
+    ref_pos = read.get_reference_positions()
+    leftbreak = reference[(chr-1)][ref_pos[0]-1]
+    rightbreak = reference[(chr-1)][ref_pos[-1]+1]
+    return((leftbreak, rightbreak))
 
 if __name__ == '__main__':
     parser = arg.ArgumentParser()
@@ -45,9 +45,6 @@ if __name__ == '__main__':
     fastafile = Fasta(args.fasta, as_raw = True)
 
     patternsDict = {}
-    leftFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T':0, 'N': 0}
-    rightFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T': 0, 'N': 0}
-    
 
     chrs = [i for i in range(1,23)]
     
@@ -67,13 +64,6 @@ if __name__ == '__main__':
             else:
                 strando = '+'
 
-            (leftflank, rightflank) = get_flanking_bases(read, chr, fastafile)
-
-            if (leftflank in leftFlankingDict and rightflank in rightFlankingDict):
-                leftFlankingDict[leftflank] += 1
-                rightFlankingDict[rightflank] += 1
-            
-    
             for i in range(len(mutPos)):
 
                 pos = mutPos[i]
@@ -86,15 +76,18 @@ if __name__ == '__main__':
                 if (pos < read.qstart or pos > read.qend or mut == 'N'):
                     continue
 
-                start = posg[i]-2
-                end = posg[i]+2
+                start = posg[i]-1
+                end = posg[i]+1
                 ref = fastafile[(chr-1)][start:(end+1)]
-                patt = ref[0:3] + '->' + mut + ref[3:5]
+                patt = ref[0:2] + '->' + mut + ref[2:4]
 
                 mutStart = pos - read.qstart
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - pos
-                val = (patt, mutStart, mutEnd, strando)
+
+                (leftbreak, rightbreak) = get_bases_strandbreaks(read, chr, fastafile)
+                
+                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando)
 
                 if val in patternsDict:
                     patternsDict[val] += 1
@@ -105,17 +98,7 @@ if __name__ == '__main__':
     with open(args.out + '.csv', 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
-            writer.writerow([key[0], key[1], key[2], key[3], value])
+            writer.writerow([key[0], key[1], key[2], key[3], key[4], key[5], value])
 
-
-    with open(args.out + '.leftflank.csv', 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key, value in leftFlankingDict.items():
-            writer.writerow([key, value])
-
-    with open(args.out + '.rightflank.csv', 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key, value in rightFlankingDict.items():
-            writer.writerow([key, value])
 
 

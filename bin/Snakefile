@@ -1,7 +1,7 @@
 import glob, os
 
 
-ANCIENT_SAMPLES = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/*.bam")))]
+ANCIENT_SAMPLES = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/I*.bam")))]
 
 workdir: '/project/mstephens/ancient-damage/'
 
@@ -24,8 +24,6 @@ rule call_damage:
         ref = '/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa'
     output:
         'csv/{sample}.q30.csv'
-        #'csv/{sample}.q30.leftflank.csv',
-        #'csv/{sample}.q30.rightflank.csv'
     params:
         prefix = 'csv/{sample}.q30' 
     run:
