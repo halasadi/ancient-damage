@@ -54,3 +54,13 @@ out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1), 25, 35))
 save(out,
      file="../processed_data/HGDPmoderns-counts-table-strand-flank.rda")
 
+dir <- "../data/Sardinia_data_strand_flank/";
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1)))
+save(out,
+     file="../processed_data/sardinia2017-strand-flank.rda")
+
+dir <- "../data/1000Gmoderns_data_strand_flank_2/";
+out <- aggregate_bin_counts(dir, breaks = c(-1, seq(1,20,1)))
+save(out,
+     file="../processed_data/1000g-strand-flank-2.rda")
+
