@@ -43,6 +43,22 @@ def find_substitutions(read, chr, reference):
             mpos = mpos + (i,)
     return((mpos, posg))
 
+def find_substitutions_testing(read, chr, reference):
+    ref_pos = read.get_reference_positions(full_length=True)
+    align_qualities = read.query_qualities
+    seq = read.query_sequence
+
+    if (None in ref_pos or None in seq):
+        continue
+
+    start = ref_pos[read.qstart]
+    end = ref_pos[(read.qend-1)]
+    refs = reference[(chr-1)][start:(end+1)]
+    bps = seq[read.qstart:read.qend]
+    mpos = [i for i in range(len(refs)) if refs[i] != bps[i] and align_qualities[i] > MIN_BQ_SCORE]
+    posg = [ref_pos[pos] for pos in mpos]
+    
+    return((mpos, posg))
 
 def get_bases_strandbreaks(read, chr, reference):
     ref_pos = read.get_reference_positions()
@@ -60,7 +76,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    ## ../data/T004_all_chr.bam
+    ## ../data/bam/Lindo2016/T004_all_chr.bam
     samfile = pysam.AlignmentFile(args.bam, "rb")
     ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
     fastafile = Fasta(args.fasta, as_raw = True)
@@ -125,7 +141,7 @@ if __name__ == '__main__':
                     patternsDict[val] = 1
 
     # write to file
-    with open(args.out + '.csv', 'w') as csv_file:
+    with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
             writer.writerow([key[0], key[1], key[2], key[3], key[4], key[5], value])

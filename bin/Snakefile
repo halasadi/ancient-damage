@@ -1,36 +1,57 @@
 import glob, os
 
 
-ANCIENT_SAMPLES = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/I*.bam")))]
+ALLENTOFT = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Allentoft/*.bam")))]
+
+ANCIENT_SHERPA = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/ancient_sherpa/*.bam")))]
+
+GOSLING = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Gosling/*.bam")))]
+
+LINDO = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Lindo2016/*.bam")))]
+
+MODERNS = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/moderns/*.bam")))]
+
+SARDINIA = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/sardinia/*.bam")))]
+
+NO_TAGS = ["NA", "HGDP"]
+NO_CHR_PREFIX = ["RISE", "ADR", "I", "LON", "SUA", "Ust", "Altai", "DNK", "NA", "HGDP", "MA"]
+
 
 workdir: '/project/mstephens/ancient-damage/'
 
 rule all:
     input:
-        expand('csv/{sample}.q30.csv', sample = ANCIENT_SAMPLES)
+        expand('data/csv/Allentoft/{sample}.q30.csv', sample = ALLENTOFT),
+        expand('data/csv/ancient_sherpa/{sample}.q30.csv', sample = ANCIENT_SHERPA),
+        expand('data/csv/Gosling/{sample}.q30.csv', sample = GOSLING),
+        expand('data/csv/Lindo2016/{sample}.q30.csv', sample = LINDO),
+        expand('data/csv/moderns/{sample}.q30.csv', sample = MODERNS),
+        expand('data/csv/sardinia/{sample}.q30.csv', sample = SARDINIA)
 
 rule index_bams:
     input:
-        bam = 'data/{sample}.bam'
+        bam = 'data/bam/{dir}/{sample}.bam'
     output:
-        bai = 'data/{sample}.bam.bai'
+        bai = 'data/bam/{dir}/{sample}.bam.bai'
     shell:
         'samtools index {input.bam}'
         
 rule call_damage:
     input:
-        bam = 'data/{sample}.bam',
-        bai = 'data/{sample}.bam.bai',
+        bam = 'data/bam/{dir}/{sample}.bam',
+        bai = 'data/bam/{dir}/{sample}.bam.bai',
         ref = '/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa'
     output:
-        'csv/{sample}.q30.csv'
-    params:
-        prefix = 'csv/{sample}.q30' 
+        'data/csv/{dir}/{sample}.q30.csv'
     run:
         inp = wildcards.sample
-        if (inp.startswith('RISE') or inp.startswith('ADR') or inp.startswith('I') or inp.startswith('LON') or
-            inp.startswith('SUA') or inp.startswith('Ust') or inp.startswith('Altai') or inp.startswith('DNK')):
-            shell('python bin/generate_summary_data_tags.py -b {input.bam} -o {params.prefix} -f {input.ref}')
+        IS_NO_CHR_PREFIX = any([inp.startswith(x) for x in NO_CHR_PREFIX])
+        IS_NO_TAGS = any([inp.startswith(x) for x in NO_TAGS])
+        if (IS_NO_CHR_PREFIX and IS_NO_TAGS):
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref}')
+        elif IS_NO_CHR_PREFIX and not IS_NO_TAGS:
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --use-tags')
+        elif not IS_NO_CHR_PREFIX and not IS_NO_TAGS:
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --use-tags --add-chr')
         else:
-            shell('python bin/generate_summary_data_tags.py -b {input.bam} -o {params.prefix} -f {input.ref} --add-chr')
-
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
