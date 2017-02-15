@@ -27,29 +27,8 @@ def find_substitutions(read, chr, reference):
     align_qualities = read.query_qualities
     seq = read.query_sequence
 
-    posg = ()
-    mpos = ()
-    for i in range(len(ref_pos)):
-        if (ref_pos[i] is None or seq[i] is None):
-            continue
-        if (align_qualities[i] is None or align_qualities[i] < MIN_BQ_SCORE):
-            continue
-        if (i < read.qstart or i > read.qend):
-            continue
-        ref = reference[(chr-1)][ref_pos[i]]
-        bp = seq[i]
-        if (ref != bp):
-            posg = posg + (ref_pos[i],)
-            mpos = mpos + (i,)
-    return((mpos, posg))
-
-def find_substitutions_testing(read, chr, reference):
-    ref_pos = read.get_reference_positions(full_length=True)
-    align_qualities = read.query_qualities
-    seq = read.query_sequence
-
     if (None in ref_pos or None in seq):
-        continue
+        return((), ())
 
     start = ref_pos[read.qstart]
     end = ref_pos[(read.qend-1)]
