@@ -23,18 +23,22 @@ def find_substitutions_wtags(aligned_pairs):
     return((mpos, posg))
 
 def find_substitutions(read, chr, reference):
-    ref_pos = read.get_reference_positions(full_length=True)
-    align_qualities = read.query_qualities
-    seq = read.query_sequence
+    ref_pos = read.get_reference_positions()
+    seq = read.query_alignment_sequence
 
-    if (None in ref_pos or None in seq):
+    if (ref_pos is None or None in ref_pos):
         return((), ())
 
-    start = ref_pos[read.qstart]
-    end = ref_pos[(read.qend-1)]
+    start = ref_pos[0]
+    end = ref_pos[-1]
     refs = reference[(chr-1)][start:(end+1)]
-    bps = seq[read.qstart:read.qend]
-    mpos = [i for i in range(len(refs)) if refs[i] != bps[i] and align_qualities[i] > MIN_BQ_SCORE]
+    
+    n = len(refs)
+    # check if INDEL
+    if n is not len(seq):
+        return((), ())
+        
+    mpos = [i for i in range(n) if refs[i] != seq[i]]
     posg = [ref_pos[pos] for pos in mpos]
     
     return((mpos, posg))
@@ -51,7 +55,7 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
     parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
-    parser.add_argument("--use-tags", help = "use the MD and NM tags in your bam file?", default = True, action = 'store_true', dest = "use_tags")
+    parser.add_argument("--use-tags", help = "use the MD and NM tags in your bam file?", default = False, action = 'store_true', dest = "use_tags")
     
     args = parser.parse_args()
 
@@ -69,7 +73,7 @@ if __name__ == '__main__':
             if (read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
                 continue
 
-            if (args.use_tags and read.get_tag('NM') == 0):
+            if args.use_tags and read.get_tag('NM') == 0:
                 continue
 
             seq = read.query_sequence
