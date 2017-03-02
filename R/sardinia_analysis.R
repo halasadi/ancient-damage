@@ -3,6 +3,149 @@
 #############   applying aRchaic on Sardinian data  ####################
 
 data1 <- get(load("../processed_data/sardinia2017-strand-flank.rda"))
+sig <- colnames(data1)
+mut <- substring(sig, 2, 5)
+sign <- substring(sig, 8, 8)
+
+pos <- as.numeric(sapply(colnames(data1), function(x) return(strsplit(x, "[_]")[[1]][5])))
+filter_indices <- which(pos < 2)
+
+tab <- tbl_df(t(data1[, filter_indices])) %>% mutate(mut=mut[filter_indices], sign=sign[filter_indices]) %>% group_by(mut, sign) %>% summarise_each(funs(sum(.))) %>% as.data.frame
+
+write.csv(tab, "../processed_data/table_sardinians_mutations.csv")
+
+
+tab <- read.csv("../processed_data/table_sardinians_mutations.csv")
+
+
+Names=c("Food","Music","People")     # create list of names
+data=data.frame(cbind(freq),Names)   # combine them into a data frame
+data=data[,c(5,3,1,2,4)]             # sort columns
+
+# melt the data frame for plotting
+data.m <- melt(data, id.vars='Names')
+
+
+graphs <- list()
+
+for(m in 1:26){
+  dat <- cbind.data.frame(tab[,2], tab[,3], tab[,(3+m)])
+  colnames(dat) <- c("mut", "strand", "val")
+  graphs[[m]] <- ggplot(dat, aes(mut, val)) +
+    geom_bar(aes(fill = strand), position = "dodge", stat="identity")
+}
+
+multiplot(graphs[[1]], graphs[[2]], graphs[[3]], graphs[[4]], graphs[[5]],
+          graphs[[6]], graphs[[7]], graphs[[8]], graphs[[9]], graphs[[10]],
+          graphs[[11]], graphs[[12]], graphs[[13]], graphs[[14]], graphs[[15]],
+          graphs[[16]], graphs[[17]], graphs[[18]], graphs[[19]], graphs[[20]],
+          graphs[[21]], graphs[[22]], graphs[[23]], graphs[[24]], graphs[[25]],
+          graphs[[26]],
+          cols=5)
+
+
+multiplot <- function(..., plotlist=NULL, cols) {
+  require(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # Make the panel
+  plotCols = cols                          # Number of columns of plots
+  plotRows = ceiling(numPlots/plotCols) # Number of rows needed, calculated from # of cols
+
+  # Set up the page
+  grid.newpage()
+  pushViewport(viewport(layout = grid.layout(plotRows, plotCols)))
+  vplayout <- function(x, y)
+    viewport(layout.pos.row = x, layout.pos.col = y)
+
+  # Make each plot, in the correct location
+  for (i in 1:numPlots) {
+    curRow = ceiling(i/plotCols)
+    curCol = (i-1) %% plotCols + 1
+    print(plots[[i]], vp = vplayout(curRow, curCol ))
+  }
+
+}
+
+
+multiplot(graphs, cols=2)
+
+
+color=c("red","blue","cornflowerblue","black","cyan","darkblue",
+        "brown4","burlywood","darkgoldenrod1","darkgray","deepskyblue","darkkhaki",
+        "firebrick","darkorchid","hotpink","green","magenta","yellow", "azure1","azure4");
+
+plot.new()
+par(mfrow=c(1,2))
+pattern_plot_full(file="../data/Sardinia_data_strand_flank/MA100snp_sorted_deduped_chrALL.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  strand = "both",
+                  plot_type="left",
+                  sample_name = "ISB001",
+                  cols = color,
+                  legend_cex = 0.1)
+
+pattern_plot_full(file="../data/Sardinia_data_strand_flank/MA100snp_sorted_deduped_chrALL.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C","\n",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  strand = "both",
+                  plot_type="right",
+                  sample_name = "ISB001",
+                  cols = color,
+                  legend_cex=0.1)
+
+plot.new()
+par(mar=c(1,1,1,1))
+par(mfrow=c(1,2))
+pattern_plot_full(file="../data/Sardinia_data_strand_flank/MA100snp_sorted_deduped_chrALL.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  strand = "+",
+                  plot_type="left",
+                  sample_name = "ISB001",
+                  cols = color,
+                  legend_cex = 0.3)
+
+pattern_plot_full(file="../data/Sardinia_data_strand_flank/MA100snp_sorted_deduped_chrALL.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C","\n",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  strand = "+",
+                  plot_type="right",
+                  sample_name = "ISB001",
+                  cols = color,
+                  legend_cex=0.3)
+
+plot.new()
+par(mfrow=c(1,2))
+pattern_plot_full(file="../data/AnnaGosling2016_strand_flank/ADR-T1-KS20.dup.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  strand = "-",
+                  plot_type="left",
+                  sample_name = "ISB001",
+                  cols = color,
+                  legend_cex = 0.1)
+
+pattern_plot_full(file="../data/Sardinia_data_strand_flank/MA108snp_sorted_deduped_chrALL.q30.csv",
+                  pattern = c("C->T", "C->G", "C->A", "T->G", "T->A", "T->C",
+                              "G->A", "G->C", "G->T", "A_>G", "A->T", "A->C"),
+                  strand = "-",
+                  plot_type="right",
+                  sample_name = "ISB001",
+                  cols = color,
+                  legend_cex=0.1)
+
+
+
+file="../data/Sardinia_data_strand_flank/ISB001snp_sorted_deduped_chrALL.q30.csv"
+
+
+
 clubbed_counts_1 <- club_signature_counts_2(data1, flanking_bases = 1)
 data2 <- get(load("../processed_data/1000g-strand-flank-2.rda"))
 clubbed_counts_2 <- club_signature_counts_2(data2, flanking_bases = 1)
