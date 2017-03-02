@@ -7,29 +7,47 @@ import argparse as arg
 MIN_BQ_SCORE = 20
 MIN_MQ_SCORE = 30
 
-def find_substitutions(aligned_pairs):
+def find_substitutions_wtags(aligned_pairs):
     """
-    For every mutation, get the reference basepair (refs), the mutation position
+    For every mutation, the mutation position
     along the read (mpos) and the position of the mutation in the genome (posg)
     """
-    refs = ()
     mpos = ()
     posg = ()
     for i in range(0, len(aligned_pairs)):
         if (aligned_pairs[i][2] is not None):
             if (aligned_pairs[i][2].islower()):
                 mpos = mpos + (aligned_pairs[i][0],)
-                refs = refs + (aligned_pairs[i][2].upper(),)
                 posg = posg + (aligned_pairs[i][1],)
                 
-    return((refs, mpos, posg))
+    return((mpos, posg))
 
-def get_flanking_bases(read, chr, reference):
+def find_substitutions(read, chr, reference):
     ref_pos = read.get_reference_positions()
-    leftflank  = reference[(chr-1)][ref_pos[0]-1]
-    rightflank = reference[(chr-1)][ref_pos[-1]+1]
-    return((leftflank, rightflank))
+    seq = read.query_alignment_sequence
 
+    if (ref_pos is None or None in ref_pos):
+        return((), ())
+
+    start = ref_pos[0]
+    end = ref_pos[-1]
+    refs = reference[(chr-1)][start:(end+1)]
+    
+    n = len(refs)
+    # check if INDEL
+    if n is not len(seq):
+        return((), ())
+        
+    mpos = [i for i in range(n) if refs[i] != seq[i]]
+    posg = [ref_pos[pos] for pos in mpos]
+    
+    return((mpos, posg))
+
+def get_bases_strandbreaks(read, chr, reference):
+    ref_pos = read.get_reference_positions()
+    leftbreak = reference[(chr-1)][ref_pos[0]-1]
+    rightbreak = reference[(chr-1)][ref_pos[-1]+1]
+    return((leftbreak, rightbreak))
 
 if __name__ == '__main__':
     parser = arg.ArgumentParser()
@@ -37,29 +55,35 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
     parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
+    parser.add_argument("--use-tags", help = "use the MD and NM tags in your bam file?", default = False, action = 'store_true', dest = "use_tags")
+    
     args = parser.parse_args()
 
-    ## ../data/T004_all_chr.bam
+    ## ../data/bam/Lindo2016/T004_all_chr.bam
     samfile = pysam.AlignmentFile(args.bam, "rb")
     ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
     fastafile = Fasta(args.fasta, as_raw = True)
-
     patternsDict = {}
-    leftFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T':0, 'N': 0}
-    rightFlankingDict = {'A': 0, 'G': 0, 'C': 0, 'T': 0, 'N': 0}
-    
 
     chrs = [i for i in range(1,23)]
     
     for chr in chrs:
         
         for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
-            if (read.get_tag('NM') == 0 or read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
+            if (read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
+                continue
+
+            if args.use_tags and read.get_tag('NM') == 0:
                 continue
 
             seq = read.query_sequence
-            aligned_pairs = read.get_aligned_pairs(with_seq=True)
-            (refs, mutPos, posg) = find_substitutions(aligned_pairs)
+            
+            if (args.use_tags):
+                aligned_pairs = read.get_aligned_pairs(with_seq=True)
+                (mutPos, posg) = find_substitutions_wtags(aligned_pairs)
+            else:
+                (mutPos, posg) = find_substitutions(read, chr, fastafile)
+            
             mapq = read.query_qualities
 
             if (read.is_reverse):
@@ -67,15 +91,13 @@ if __name__ == '__main__':
             else:
                 strando = '+'
 
-            (leftflank, rightflank) = get_flanking_bases(read, chr, fastafile)
-
-            if (leftflank in leftFlankingDict and rightflank in rightFlankingDict):
-                leftFlankingDict[leftflank] += 1
-                rightFlankingDict[rightflank] += 1
-            
-    
-            for i in range(len(mutPos)):
-
+            try:
+                (leftbreak, rightbreak) = get_bases_strandbreaks(read, chr, fastafile)
+            except IndexError:
+                leftbreak = 'N'
+                rightbreak = 'N'
+                
+            for i in range(len(posg)):
                 pos = mutPos[i]
                 mut = seq[pos]
         
@@ -86,36 +108,26 @@ if __name__ == '__main__':
                 if (pos < read.qstart or pos > read.qend or mut == 'N'):
                     continue
 
-                start = posg[i]-2
-                end = posg[i]+2
+                start = posg[i]-1
+                end = posg[i]+1
                 ref = fastafile[(chr-1)][start:(end+1)]
-                patt = ref[0:3] + '->' + mut + ref[3:5]
+                patt = ref[0:2] + '->' + mut + ref[2:4]
 
                 mutStart = pos - read.qstart
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - pos
-                val = (patt, mutStart, mutEnd, strando)
 
+                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando)
                 if val in patternsDict:
                     patternsDict[val] += 1
                 else:
                     patternsDict[val] = 1
 
     # write to file
-    with open(args.out + '.csv', 'w') as csv_file:
+    with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in patternsDict.items():
-            writer.writerow([key[0], key[1], key[2], key[3], value])
+            writer.writerow([key[0], key[1], key[2], key[3], key[4], key[5], value])
 
-
-    with open(args.out + '.leftflank.csv', 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key, value in leftFlankingDict.items():
-            writer.writerow([key, value])
-
-    with open(args.out + '.rightflank.csv', 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key, value in rightFlankingDict.items():
-            writer.writerow([key, value])
 
 
