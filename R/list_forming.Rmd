@@ -1,0 +1,43 @@
+---
+title: "forming a list"
+author: "Kushal K Dey"
+date: "3/21/2017"
+output: html_document
+---
+
+## Tutorial
+
+- Data Processing
+    - Generate MFF file from BAM: an example - generate_mff()
+    - Features of the MFF file 
+    - MFF file manaegement
+    - Signature aggregation from MFF file into bins - aggregate_signature_counts()
+    - Clubbing of signatures  - club_signature_counts()
+
+- Data Filtering 
+    - mutations - filter_by_mutation()
+    - mutations + flanking bases - filter_by_mutation_flank()
+    - mutations + position on read - filter_by_mutation_pos()
+    - mutations + flanking_bases + position on read - filter_by_mutation_flank_pos()
+    - strand and no strand filtering - filter_out_strand()
+    - strand break and no strand break composition filtering - filter_out_strand_break()
+  
+- Exploration of a MFF file
+    - aRchaic_view(): Logo plot representation of a MFF file
+    - read_length_distribution(): read length distribution of a MFF file (w and w/o   damaged reads)
+    - aRchaic_mutation_trend(): Mutation trends along reads for each MFF file
+    - flanking_base_composition(): Composition of flanking bases to mutations for each MFF file
+    - strand_break_composition(): Strand break composition of all reads in a MFF file
+    
+- Clustering of MFF files
+    - aRchaic_cluster(): GoM model clustering and visualization of MFF files in one or                           multiple folders
+    - aRchaic_cluster_beta(): a beta version of above aRchaic_cluster which is adaptive
+                         to filtered signatures
+                         
+- Classification of MFF files 
+    - aRchaic_class():  classification model on MFF files - using SVM and classtpx
+    
+- Dimension reduction and visualization of MFF file 
+    - aRchaic_pca(): Principal component analysis of MFF files
+    - aRchaic_tsne(): Non linear embedding of MFF files using t-SNE
+    - aRchaic_sfa(): Sparse factor analysis of MFF files 

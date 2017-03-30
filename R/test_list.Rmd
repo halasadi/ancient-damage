@@ -1,0 +1,17 @@
+---
+title: "test_list"
+author: "Kushal K Dey"
+date: "3/22/2017"
+output: html_document
+---
+
+generate a
+
+- `model.rda` - file containing the output from the GoM model fit 
+
+- `structure.png` - file showing the grades of membership of samples grouped by labels in a STRUCTURE plot type representation
+
+- `logo_clus_"k".png` - files for each k from 1 to K, the number of clusters, showing the logo
+plot representation of each cluster.
+
+
