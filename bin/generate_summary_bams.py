@@ -26,21 +26,20 @@ def find_substitutions(read, chr, reference):
     ref_pos = read.get_reference_positions()
     seq = read.query_alignment_sequence
 
-    if (ref_pos is None or None in ref_pos):
+    if (ref_pos is None or None in ref_pos or len(ref_pos) is 0):
         return((), ())
 
     start = ref_pos[0]
     end = ref_pos[-1]
     refs = reference[(chr-1)][start:(end+1)]
-    
-    n = len(refs)
-    # check if INDEL
-    if n is not len(seq):
+
+    # check if it's an indel
+    if ((end-start+1) is not len(seq) or len(seq) is not len(refs) or len(refs) is not len(ref_pos)):
         return((), ())
-        
-    mpos = [i for i in range(n) if refs[i] != seq[i]]
+
+    mpos = [i for i in range(len(refs)) if refs[i] != seq[i]]
     posg = [ref_pos[pos] for pos in mpos]
-    
+
     return((mpos, posg))
 
 def get_bases_strandbreaks(read, chr, reference):
@@ -54,8 +53,8 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--bam", required=True, help="bam file")
     parser.add_argument("-f", "--fasta", required=True, help = "reference file")
     parser.add_argument("-o", "--out", required=True, help="out file")
-    parser.add_argument("--add-chr", help = "add chr prefix?, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
-    parser.add_argument("--use-tags", help = "use the MD and NM tags in your bam file?", default = False, action = 'store_true', dest = "use_tags")
+    parser.add_argument("--add-chr", help = "Does your reference use the chr prefix? For example, different versions of the references either use chr1 or 1 to designate chromosome 1, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
+    parser.add_argument("--use-tags", help = "use the MD and NM tags in your bam file to speed up computation? If you have generated the BAM files and think the tags were computed correctly, we highly recommend this option", default = False, action = 'store_true', dest = "use_tags")
     
     args = parser.parse_args()
 
@@ -123,6 +122,7 @@ if __name__ == '__main__':
                 else:
                     patternsDict[val] = 1
 
+    print(CNT/TOTAL)
     # write to file
     with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
