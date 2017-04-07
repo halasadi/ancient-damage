@@ -283,13 +283,12 @@ labs <- c(rep("moderns", 50), rep("Fu", length(files)))
 levels <- unique(labs)
 
 clus_out <- aRchaic_cluster(folders = folders,
-                            K = 2,
+                            K = 3,
                             labs = labs,
                             levels = levels,
                             tol = 10,
                             run_from = "plot",
-                            output_dir = "../utilities/moderns_Fu/clus_2/",
-                            save_plot = TRUE)
+                            output_dir = "../utilities/moderns_Fu/clus_3/")
 
 ##################  moderns + Raghavan  ############################
 
@@ -324,8 +323,7 @@ clus_out <- aRchaic_cluster(folders = folders,
                             levels = levels,
                             tol = 10,
                             run_from = "gom",
-                            output_dir = "../utilities/modern_Pinhasi_Lazaridis/clus_3/",
-                            save_plot = TRUE)
+                            output_dir = "../utilities/modern_Pinhasi_Lazaridis/clus_3/")
 
 
 files <- list.files()
@@ -445,10 +443,12 @@ levels <- unique(labs)
 
 
 clus_out <- aRchaic_cluster(folders = folders,
-                            K = 3,
+                            K = 2,
                             labs = labs,
                             levels = levels,
                             tol = 10,
-                            run_from = "plot",
-                            output_dir = "../utilities/Lindo2016moderns/clus_3/")
+                            run_from = "gom",
+                            output_dir = "../utilities/Lindo2016moderns/clus_2/")
+
+###############   contaminated  samples  ##################################
 

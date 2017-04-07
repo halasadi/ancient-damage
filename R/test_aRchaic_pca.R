@@ -42,8 +42,26 @@ clus_out <- aRchaic_pca(folders = folders,
 pca_out <- get(load("../utilities/modern_Jones/pca/pca.rda"))
 screeplot(pca_out)
 
-##############   Multiple folders (aRchaic pca)  ########################
+##############   (aRchaic pca beta)  ########################
 ##########################################################################
 
+mat1 <- get(load("../data/Fu_2016/Fu_2016.rda"))
+mat2 <- get(load("../data/Pinhasi/Pinhasi.rda"))
+mat3 <- get(load("../data/Lazaridis/Lazaridis.rda"))
+mat4 <- get(load("../data/moderns_lite/moderns_lite.rda"))
+
+pooled_mat <- rbind(mat1, mat2, mat3, mat4)
+
+labs <- c(rep("Fu", dim(mat1)[1]), rep("Pinhasi", dim(mat2)[1]),
+          rep("Lazaridis", dim(mat3)[1]), rep("moderns", dim(mat4)[1]))
+
+clus_out <- aRchaic_pca_beta(mat = pooled_mat,
+                             labs = labs,
+                             type = "specific-mutation-pos",
+                             pattern = "C->T",
+                             normalize = TRUE,
+                             pcs_to_plot = c("PC1", "PC2", "PC3", "PC4", "PC5"),
+                             output_dir = "../utilities/pca_filter/",
+                             output_name = "pca-wo-strand")
 
 

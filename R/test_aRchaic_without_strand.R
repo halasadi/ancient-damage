@@ -1,13 +1,15 @@
 
 
-#########  test aRchaic without strand break  #######################
+#############  test aRchaic cluster beta without strand ##################
+
 
 mat1 <- get(load("../data/Fu_2016/Fu_2016.rda"))
 mat2 <- get(load("../data/moderns_lite/moderns_lite.rda"))
 
 mat_pooled <- rbind(mat1, mat2)
 
-mat_reduced <- filter_out_strand_break(mat_pooled)
+mat_reduced <- filter_out_strand(mat_pooled)
+
 
 signature_set <- colnames(mat_reduced)
 sig_split <- t(sapply(1:length(signature_set), function(x) return(strsplit(signature_set[x], "")[[1]][1:(flanking_bases+5)])))
@@ -22,11 +24,12 @@ pos <- as.numeric(pos)
 pos <- pos - min(pos)
 pos <- factor(pos, levels = 0:21)
 
-strand <- sapply(signature_set, function(x) return(strsplit(x, "_")[[1]][2]))
-strand <- factor(strand)
+strand_break <- sapply(signature_set, function(x) return(strsplit(x, "_")[[1]][2]))
+strand_break <- factor(strand_break)
 signature <- new_sig_split
 
-signature_pos_strand <- cbind.data.frame(new_sig_split, strand, pos)
+signature_pos_strand_break <- cbind.data.frame(new_sig_split, strand_break, pos)
+
 
 K = 3
 tol = 10
@@ -38,10 +41,9 @@ topics.control.default <- list(bf = FALSE, kill = 2, ord = TRUE, verb = 1, admix
 topics.control <- modifyList(topics.control.default, topics.control)
 
 
-suppressWarnings(topic_clus <- do.call(maptpx::topics, append(list(counts = mat_reduced, K=K, tol=tol, model = "independent", signatures = signature_pos_strand), topics.control)))
+suppressWarnings(topic_clus <- do.call(maptpx::topics, append(list(counts = mat_reduced, K=K, tol=tol, model = "independent", signatures = signature_pos_strand_break), topics.control)))
 
 suppressWarnings(topic_clus <- do.call(maptpx::topics, append(list(counts = mat_reduced, K=K, tol=tol, model = "full", signatures = NULL), topics.control)))
-
 
 theta_pool <- topic_clus$theta
 
@@ -63,25 +65,19 @@ logo.control.default <- list(sig_names = NULL, ic.scale=TRUE,
                              lineport_y=0.40,
                              lineport_width=0.32,
                              lineport_height=0.28,
-                             barport_x = 0.72,
-                             barport_y=0.60,
-                             barport_width=0.35,
-                             barport_height=0.25,
+                             breaklogoport_x = 0.90,
+                             breaklogoport_y = 0.40,
+                             breaklogoport_width=0.35,
+                             breaklogoport_height=0.50,
                              output_width = 1200, output_height = 700)
 
 logo.control <- modifyList(logo.control.default, logo.control)
 
-output_dir <- "../utilities/structure_mutation_wo_strand_break/moderns_Fu/"
+output_dir <- "../utilities/structure_mutation_wo_strand/moderns_Fu/"
 if(is.null(output_dir)){ output_dir <- paste0(getwd(),"/")}
 plot.new()
-do.call(damageLogo_two, append(list(theta_pool = topic_clus$theta,
+do.call(damageLogo_three, append(list(theta_pool = topic_clus$theta,
                                     output_dir = output_dir),
                                logo.control))
 graphics.off()
 
-
-
-
-indices_minus <- grep("_-_", signature_set)
-strand_theta <- data.frame("minus" = colSums(theta_pool[indices_minus,]),
-                           "plus" = colSums(theta_pool[-indices_minus,]))

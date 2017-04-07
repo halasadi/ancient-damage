@@ -16,8 +16,7 @@ aRchaic_view (file = "../data/Skoglund/Ajv59.hs37d5.fa.merged.q30.csv",
               flanking_bases =1,
               logo.control = list(),
               title = "Skoglund aDNA",
-              output_dir = NULL,
-              save_plot = FALSE)
+              output_dir = NULL)
 
 
 aRchaic_view (file = "../data/Siberia/MA1_1stextraction.hg19.q30.csv",
@@ -39,7 +38,7 @@ read_length_distribution(dir = "../data/Skoglund/",
                          cols = c("red", "green", "blue"),
                          cex_legend = 0.5,
                          cex.main = 0.5)
-			 
+
 ###########################   Test aRchaic view   #############################
 dir <- "../data/Tyrolean_Iceman/"
 
@@ -87,6 +86,30 @@ output_width = 1200
 output_height = 700
 save_plot=TRUE
 
+dat <- get(load("../data/Mathieson-2015-subsampled/Mathieson-2015-subsampled.rda"))
+club <- dat[1,]/sum(dat[1, ])
+temp <- t(club)
+temp <- t(temp)
+
+theta_pool <- temp
+
+
+
+
+library(grid)
+library(gridBase)
+library(Logolas)
+damageLogo_five(temp)
+
+pattern <- "I0011.1240k.subsampled.q30.csv"
+out <- aggregate_signature_counts(dir = "../data/Mathieson-2015-subsampled/",
+                                  pattern = pattern,
+                                  breaks = c(-1, seq(1,20,1)),
+                                  flanking_bases = 1)
+clubbed_counts <- club_signature_counts(out, flanking_bases = 1)
+clubbed_counts_norm <- clubbed_counts/ sum(clubbed_counts)
+
+damageLogo_five(theta_pool = temp, output_dir = "../utilities/")
 
 theta_pool = temp
 output_dir = output_dir
@@ -100,5 +123,9 @@ aRchaic_view(dir = "../data/Tyrolean_Iceman/",
              logo.control = list(),
              output_dir = NULL,
              save_plot = FALSE)
+
+
+file <- "../data/Mathieson/I0011.1240k.subsampled.q30.csv"
+
 
 

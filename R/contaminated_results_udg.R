@@ -14,14 +14,22 @@ samp_1 <- rmultinom(1, 10000, ancient[1,]) + rmultinom(1, 20000, moderns[1,])
 samp_2 <- rmultinom(1, 10000, ancient[2,]) + rmultinom(1, 10000, moderns[20,])
 samp_3 <- rmultinom(1, 10000, ancient[3,]) + rmultinom(1, 5000, moderns[30,])
 samp_4 <- rmultinom(1, 10000, ancient[4,]) + rmultinom(1, 50000, moderns[40,])
-samp_5 <- rmultinom(1, 10000, ancient[5,]) + rmultinom(1, 50, moderns[50,])
+samp_5 <- rmultinom(1, 5000, ancient[5,]) + rmultinom(1, 500, moderns[30,])
+samp_6 <- rmultinom(1, 500, ancient[2,]) + rmultinom(1, 700, moderns[20,])
+samp_7 <- rmultinom(1, 1000, ancient[3,]) + rmultinom(1, 5000, moderns[40,])
+samp_8 <- rmultinom(1, 10000, ancient[5,]) + rmultinom(1, 100, moderns[20,])
+samp_9 <- rmultinom(1, 200, ancient[3,]) + rmultinom(1, 1700, moderns[50,])
+samp_10 <- rmultinom(1, 20, ancient[3,]) + rmultinom(1, 10000, moderns[20,])
 
-contam_samp <- t(cbind(samp_1, samp_2, samp_3, samp_4, samp_5))
+true_prop <- c(1/3, 1/2, 10/15, 1/6, 5000/5500, 5/12, 1/6, 100/101, 2/19,  2/1000)
+
+
+contam_samp <- t(cbind(samp_1, samp_2, samp_3, samp_4, samp_5, samp_6, samp_7, samp_8, samp_9, samp_10))
 
 
 pooled_data <- rbind(contam_samp, ancient, moderns)
 
-labs <- c(rep("contaminated", 5), rep("ancient", dim(ancient)[1]),
+labs <- c(rep("contaminated", 10), rep("ancient", dim(ancient)[1]),
           rep("moderns", 50))
 levels <- unique(labs)
 
