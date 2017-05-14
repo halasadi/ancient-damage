@@ -1,0 +1,32 @@
+---
+title: "aRchaic_view"
+author: "Kushal K Dey"
+date: "3/22/2017"
+output: html_document
+---
+
+## aRchaic_view():  Viewing a MFF file
+
+The user can display the mutational features in a MutationFeatureFormat (MFF) file by a logo plot using the `aRchaic_view()` function.
+
+```{r echo=TRUE, eval=FALSE}
+ aRchaic_view (dir = "../data/Skoglund/Ajv59.hs37d5.fa.merged.q30.csv",
+                breaks = c(-1, seq(1,20, 2)),
+                flanking_bases =1,
+                logo.control = list(),
+                title = "Skoglund aDNA",
+                output_dir = NULL,
+                save_plot = TRUE)
+```
+
+There are also control parameters to this plot that the user can toggle with. <codeline>breaks</codeline>represents how to bin the locations of the mutations on the read from each end.
+
+- <codeline>breaks</codeline>represents how to bin the locations of the mutations on the read from each end. (see aggregate_signature_counts() documnetation above for more details on the binning).
+
+- <codeline>flanking_bases </codeline> represents the number of bases to the left and right of the mutation we record in our feature. The default is 1, which means, we only record the base to the immediate left and right of the mutation (this is also called a mutation trio).
+
+- <codeline>title</codeline> represents the title of the logo plot representation.
+
+- 
+
+- 

@@ -1,0 +1,10 @@
+---
+title: "Untitled"
+author: "Kushal K Dey"
+date: "4/4/2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+$\hat{y}$ is good
