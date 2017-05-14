@@ -31,12 +31,24 @@ SARDINIA = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob
 
 LAZARIDIS = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Lazaridis/*.bam")))]
 
-REICH = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Reich/*.bam")))]
-
 ALTAI = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Altai/*.bam")))]
 
-NO_TAGS = ["moderns", "Tyrolean_Iceman", "Skoglund", "Pinhasi_2014", "Fu_2016"]
-NO_CHR_PREFIX = ["Altai", "Fu_2016", "Denisova", "Lindo2017", "Siberian_MA-1_1stExtraction", "Skoglund", "Allentoft", "Gosling", "Reich", "sardinia", "Ust", "Altai", "moderns", "Lazaridis"]
+NEANDERTHAL = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/neanderthal/*.bam")))]
+
+GOSLING_2017 = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Gosling_2017/*.bam")))]
+
+CONTAMINATED = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/contaminated/*.bam")))]
+
+RAGHAVAN =  [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Raghavan/*.bam")))]
+
+MATHIESON = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Mathieson_2015/*.bam")))]
+
+HAAK = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Haak_2015/*.bam")))]
+
+SUBSET = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Mathieson_2015_subsampled/*.bam")))]
+
+#NO_TAGS = ["moderns", "Tyrolean_Iceman", "Skoglund", "Pinhasi_2014", "Fu_2016"]
+NO_CHR_PREFIX = ["Altai", "Fu_2016", "Denisova", "Lindo2017", "Siberian_MA-1_1stExtraction", "Skoglund", "Allentoft", "Gosling", "Reich", "sardinia", "Ust", "Altai", "moderns", "Lazaridis", "Gosling_2017", "Raghavan", "Mathieson_2015", "Haak_2015", "Mathieson_2015_subsampled"]
 
 workdir: '/project/mstephens/ancient-damage/'
 
@@ -51,13 +63,17 @@ rule all:
         expand('data/csv/Denisova/{sample}.q30.csv', sample = DENISOVA),
         expand('data/csv/Fu_2016/{sample}.q30.csv', sample = FU),
         expand('data/csv/Jones_2015/{sample}.q30.csv', sample = JONES),
-        expand('data/csv/Pinhasi_2014/{sample}.q30.csv', sample = PINHASI),
+#        expand('data/csv/Pinhasi_2014/{sample}.q30.csv', sample = PINHASI),
         expand('data/csv/Siberian_MA-1_1stExtraction/{sample}.q30.csv', sample = SIBERIA),
         expand('data/csv/Skoglund/{sample}.q30.csv', sample = SKOGLUND),
-        expand('data/csv/Tyrolean_Iceman/{sample}.q30.csv', sample = ICEMAN),
+#        expand('data/csv/Tyrolean_Iceman/{sample}.q30.csv', sample = ICEMAN),
         expand('data/csv/Ust/{sample}.q30.csv', sample = UST),
         expand('data/csv/Lazaridis/{sample}.q30.csv', sample = LAZARIDIS),
-        expand('data/csv/Reich/{sample}.q30.csv', sample = REICH),
+        expand('data/csv/Gosling_2017/{sample}.q30.csv', sample = GOSLING_2017),
+        expand('data/csv/Raghavan/{sample}.q30.csv', sample = RAGHAVAN),
+        expand('data/csv/Mathieson_2015/{sample}.q30.csv', sample = MATHIESON),
+        expand('data/csv/Mathieson_2015_subsampled/{sample}.q30.csv', sample = SUBSET),
+        expand('data/csv/Haak_2015/{sample}.q30.csv', sample = HAAK),
         expand('data/csv/Altai/{sample}.q30.csv', sample = ALTAI)
 
 rule index_bams:
@@ -77,11 +93,12 @@ rule call_damage:
         'data/csv/{dir}/{sample}.q30.csv'
     run:
         study = wildcards.dir
+
         if (study in NO_CHR_PREFIX and study in NO_TAGS):
-            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref}')
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --dont-use-tags')
         elif (study in NO_CHR_PREFIX and study not in NO_TAGS):
-            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --use-tags')
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref}')
         elif (study not in NO_CHR_PREFIX and study not in NO_TAGS):
-            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --use-tags --add-chr')
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
         else:
             shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
