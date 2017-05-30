@@ -1,3 +1,4 @@
+
 from pyfaidx import Fasta
 import csv
 import pysam
@@ -54,7 +55,8 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--fasta", required=True, help = "reference file, the reference file must be indexed")
     parser.add_argument("-o", "--out", required=True, help="out file")
     parser.add_argument("--add-chr", help = "Does your reference use the chr prefix? For example, different versions of the references either use chr1 or 1 to designate chromosome 1, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
-    parser.add_argument("--dont-use-tags", help = "don't use the MD and NM tags? If the tags are computed incorrectly, you can use this option and we use a simple method to align reads to the reference (we do not recommend this option)", default = False, action = 'store_true', dest = "dont_use_tags")
+    parser.add_argument("--dont-use-tags", help = "don't use the MD and NM tags? If the tags are computed incorrectly from the alignment, you can use this option and we use a simple method to align reads to the reference (we do not recommend this option)", default = False, action = 'store_true', dest = "dont_use_tags")
+    parser.add_argument("-n", "--nflanking", required=False, default = 1, help="number of flanking base-pairs around the mismatch to record, must be an integer >= 1", dest = "nflanking")
     
     args = parser.parse_args()
 
@@ -63,7 +65,8 @@ if __name__ == '__main__':
     ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
     fastafile = Fasta(args.fasta, as_raw = True)
     patternsDict = {}
-
+    nflanking = int(args.nflanking)
+    
     chrs = [i for i in range(1,23)]
     
     for chr in chrs:
@@ -72,7 +75,7 @@ if __name__ == '__main__':
             if (read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
                 continue
 
-            if args.use_tags and read.get_tag('NM') == 0:
+            if (not args.dont_use_tags) and read.get_tag('NM') == 0:
                 continue
 
             seq = read.query_sequence
@@ -108,10 +111,10 @@ if __name__ == '__main__':
                 if (pos < read.qstart or pos > read.qend or mut == 'N'):
                     continue
 
-                start = posg[i]-1
-                end = posg[i]+1
+                start = posg[i]-nflanking
+                end = posg[i]+nflanking
                 ref = fastafile[(chr-1)][start:(end+1)]
-                patt = ref[0:2] + '->' + mut + ref[2:4]
+                patt = ref[0:(nflanking+1)] + '->' + mut + ref[(nflanking+1):(2*nflanking+1)]
 
                 mutStart = pos - read.qstart
                 # read.qend is not 0-based
