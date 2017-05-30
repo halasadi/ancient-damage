@@ -50,11 +50,11 @@ def get_bases_strandbreaks(read, chr, reference):
 
 if __name__ == '__main__':
     parser = arg.ArgumentParser()
-    parser.add_argument("-b", "--bam", required=True, help="bam file")
-    parser.add_argument("-f", "--fasta", required=True, help = "reference file")
+    parser.add_argument("-b", "--bam", required=True, help="bam file, the bam file must be indexed")
+    parser.add_argument("-f", "--fasta", required=True, help = "reference file, the reference file must be indexed")
     parser.add_argument("-o", "--out", required=True, help="out file")
     parser.add_argument("--add-chr", help = "Does your reference use the chr prefix? For example, different versions of the references either use chr1 or 1 to designate chromosome 1, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
-    parser.add_argument("--use-tags", help = "use the MD and NM tags in your bam file to speed up computation? If you have generated the BAM files and think the tags were computed correctly, we highly recommend this option", default = False, action = 'store_true', dest = "use_tags")
+    parser.add_argument("--dont-use-tags", help = "don't use the MD and NM tags? If the tags are computed incorrectly, you can use this option and we use a simple method to align reads to the reference (we do not recommend this option)", default = False, action = 'store_true', dest = "dont_use_tags")
     
     args = parser.parse_args()
 
@@ -77,11 +77,12 @@ if __name__ == '__main__':
 
             seq = read.query_sequence
             
-            if (args.use_tags):
+            if (args.dont_use_tags):
+                (mutPos, posg) = find_substitutions(read, chr, fastafile)
+            else:
                 aligned_pairs = read.get_aligned_pairs(with_seq=True)
                 (mutPos, posg) = find_substitutions_wtags(aligned_pairs)
-            else:
-                (mutPos, posg) = find_substitutions(read, chr, fastafile)
+
             
             mapq = read.query_qualities
 
@@ -122,7 +123,6 @@ if __name__ == '__main__':
                 else:
                     patternsDict[val] = 1
 
-    print(CNT/TOTAL)
     # write to file
     with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
