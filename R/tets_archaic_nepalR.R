@@ -20,13 +20,13 @@ labs <- c(paste0(substring(paste0(files), 1, 3), "_", substring(paste0(files), 8
 levels <- unique(labs)
 
 clus_out <- aRchaic_cluster(folders = folders,
-                            K = 5,
+                            K = 3,
                             labs = labs,
                             levels = levels,
                             tol = 10,
                             run_from = "plot",
-                            output_dir = "../utilities/Nepal_sardinia_moderns/clus_5/",
-                            save_plot = TRUE)
+                            positive_logo = FALSE,
+                            output_dir = "../utilities/Nepal_sardinia_moderns/clus_3/")
 
 
 #############   Lazaridis + Moderns  ####################################

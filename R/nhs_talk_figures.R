@@ -83,12 +83,13 @@ indices5 <- which(labs == "Allentoft")
 indices6 <- which(labs == "Sherpa_data")
 
 pooled_indices <- c(indices1, indices2, indices3, indices4, indices5, indices6)
-labs <- c(rep("Lazaridis", length(indices1)), rep("Reich", length(indices2)),
-          rep("neanderthal", length(indices3)), rep("Pinahsi", length(indices4)),
+labs <- c(rep("Lazaridis", length(indices1)), rep("Mathieson", length(indices2)),
+          rep("neanderthal", length(indices3)), rep("Pinhasi", length(indices4)),
           rep("Allentoft", length(indices5)), rep("Sherpa", length(indices6)))
-levels <- c("Lazaridis", "Reich", "neanderthal", "Pinhasi", "Allentoft", "Sherpa")
+levels <- c("Lazaridis", "Mathieson", "neanderthal", "Pinhasi", "Allentoft", "Sherpa")
 
 omega <- base_composition$right[pooled_indices,]
+omega <- t(apply(omega,1, function(x) return(x/sum(x))))
 
 annotation <- data.frame(
   sample_id = paste0("X", c(1:NROW(omega))),
@@ -100,7 +101,7 @@ topic_cols = c("red","blue","darkgoldenrod1","cyan","firebrick", "green",
                "brown4","darkorchid","magenta","yellow", "azure1","azure4")
 
 rownames(omega) <- annotation$sample_id
-StructureGGplot(omega = omega,
+CountClust::StructureGGplot(omega = omega,
                 annotation = annotation,
                 palette = RColorBrewer::brewer.pal(8, "Accent"),
                 yaxis_label = "Ancients",
@@ -109,6 +110,6 @@ StructureGGplot(omega = omega,
                 axis_tick = list(axis_ticks_length = .1,
                                  axis_ticks_lwd_y = .1,
                                  axis_ticks_lwd_x = .1,
-                                 axis_label_size = 7,
+                                 axis_label_size = 10,
                                  axis_label_face = "bold"))
 

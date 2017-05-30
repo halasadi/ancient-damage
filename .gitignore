@@ -7,3 +7,4 @@ rda/*
 processed_data/maptpx-runs/
 processed_data/*
 utilities/T004_all_chr*
+bin/*
