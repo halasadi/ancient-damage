@@ -47,8 +47,12 @@ HAAK = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/p
 
 SUBSET = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Mathieson_2015_subsampled/*.bam")))]
 
-#NO_TAGS = ["moderns", "Tyrolean_Iceman", "Skoglund", "Pinhasi_2014", "Fu_2016"]
-NO_CHR_PREFIX = ["Altai", "Fu_2016", "Denisova", "Lindo2017", "Siberian_MA-1_1stExtraction", "Skoglund", "Allentoft", "Gosling", "Reich", "sardinia", "Ust", "Altai", "moderns", "Lazaridis", "Gosling_2017", "Raghavan", "Mathieson_2015", "Haak_2015", "Mathieson_2015_subsampled"]
+TIBETANS = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Tibetans/*.bam")))]
+
+
+
+NO_TAGS = ["moderns", "Tyrolean_Iceman", "Skoglund", "Pinhasi_2014", "Fu_2016"]
+NO_CHR_PREFIX = ["Altai", "Fu_2016", "Denisova", "Lindo2017", "Siberian_MA-1_1stExtraction", "Skoglund", "Allentoft", "Gosling", "Reich", "sardinia", "Ust", "Altai", "moderns", "Lazaridis", "Gosling_2017", "Raghavan", "Mathieson_2015", "Haak_2015", "Mathieson_2015_subsampled", "Tibetans"]
 
 workdir: '/project/mstephens/ancient-damage/'
 
@@ -74,6 +78,7 @@ rule all:
         expand('data/csv/Mathieson_2015/{sample}.q30.csv', sample = MATHIESON),
         expand('data/csv/Mathieson_2015_subsampled/{sample}.q30.csv', sample = SUBSET),
         expand('data/csv/Haak_2015/{sample}.q30.csv', sample = HAAK),
+        expand('data/csv/Tibetans/{sample}.q30.csv', sample = TIBETANS),
         expand('data/csv/Altai/{sample}.q30.csv', sample = ALTAI)
 
 rule index_bams:

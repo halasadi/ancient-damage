@@ -1,4 +1,3 @@
-
 from pyfaidx import Fasta
 import csv
 import pysam
@@ -64,11 +63,13 @@ if __name__ == '__main__':
     samfile = pysam.AlignmentFile(args.bam, "rb")
     ## "/project/jnovembre/data/external_public/reference_genomes/hs37d5.fa"
     fastafile = Fasta(args.fasta, as_raw = True)
-    patternsDict = {}
+
+    mismatches = []
     nflanking = int(args.nflanking)
     
     chrs = [i for i in range(1,23)]
-    
+    readnum = 1
+
     for chr in chrs:
         
         for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
@@ -79,7 +80,7 @@ if __name__ == '__main__':
                 continue
 
             seq = read.query_sequence
-            
+
             if (args.dont_use_tags):
                 (mutPos, posg) = find_substitutions(read, chr, fastafile)
             else:
@@ -120,17 +121,14 @@ if __name__ == '__main__':
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - pos
 
-                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando)
-                if val in patternsDict:
-                    patternsDict[val] += 1
-                else:
-                    patternsDict[val] = 1
+                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando, readnum)
+                mismatches.append(val)
+            readnum += 1
 
     # write to file
     with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
-        for key, value in patternsDict.items():
-            writer.writerow([key[0], key[1], key[2], key[3], key[4], key[5], value])
-
+        for val in mismatches:
+            writer.writerow(val)
 
 
