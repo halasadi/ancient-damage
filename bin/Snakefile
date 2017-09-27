@@ -3,7 +3,7 @@ import glob, os
 
 ALLENTOFT = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Allentoft/*.bam")))]
 
-ANCIENT_SHERPA = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/ancient_sherpa/*.bam")))]
+#ANCIENT_SHERPA = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/ancient_sherpa/*.bam")))]
 
 DENISOVA = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Denisova/*.bam")))]
 
@@ -47,7 +47,7 @@ HAAK = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/p
 
 SUBSET = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Mathieson_2015_subsampled/*.bam")))]
 
-TIBETANS = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Tibetans/*.bam")))]
+#TIBETANS = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/mstephens/ancient-damage/data/bam/Tibetans/*.bam")))]
 
 
 
@@ -59,7 +59,7 @@ workdir: '/project/mstephens/ancient-damage/'
 rule all:
     input:
         expand('data/csv/Allentoft/{sample}.q30.csv', sample = ALLENTOFT),
-        expand('data/csv/ancient_sherpa/{sample}.q30.csv', sample = ANCIENT_SHERPA),
+#        expand('data/csv/ancient_sherpa/{sample}.q30.csv', sample = ANCIENT_SHERPA),
         expand('data/csv/Gosling/{sample}.q30.csv', sample = GOSLING),
         expand('data/csv/Lindo2016/{sample}.q30.csv', sample = LINDO),
         expand('data/csv/moderns/{sample}.q30.csv', sample = MODERNS),
@@ -67,18 +67,18 @@ rule all:
         expand('data/csv/Denisova/{sample}.q30.csv', sample = DENISOVA),
         expand('data/csv/Fu_2016/{sample}.q30.csv', sample = FU),
         expand('data/csv/Jones_2015/{sample}.q30.csv', sample = JONES),
-#        expand('data/csv/Pinhasi_2014/{sample}.q30.csv', sample = PINHASI),
+        expand('data/csv/Pinhasi_2014/{sample}.q30.csv', sample = PINHASI),
         expand('data/csv/Siberian_MA-1_1stExtraction/{sample}.q30.csv', sample = SIBERIA),
         expand('data/csv/Skoglund/{sample}.q30.csv', sample = SKOGLUND),
 #        expand('data/csv/Tyrolean_Iceman/{sample}.q30.csv', sample = ICEMAN),
         expand('data/csv/Ust/{sample}.q30.csv', sample = UST),
         expand('data/csv/Lazaridis/{sample}.q30.csv', sample = LAZARIDIS),
-        expand('data/csv/Gosling_2017/{sample}.q30.csv', sample = GOSLING_2017),
-        expand('data/csv/Raghavan/{sample}.q30.csv', sample = RAGHAVAN),
+#        expand('data/csv/Gosling_2017/{sample}.q30.csv', sample = GOSLING_2017),
+#        expand('data/csv/Raghavan/{sample}.q30.csv', sample = RAGHAVAN),
         expand('data/csv/Mathieson_2015/{sample}.q30.csv', sample = MATHIESON),
         expand('data/csv/Mathieson_2015_subsampled/{sample}.q30.csv', sample = SUBSET),
         expand('data/csv/Haak_2015/{sample}.q30.csv', sample = HAAK),
-        expand('data/csv/Tibetans/{sample}.q30.csv', sample = TIBETANS),
+#        expand('data/csv/Tibetans/{sample}.q30.csv', sample = TIBETANS),
         expand('data/csv/Altai/{sample}.q30.csv', sample = ALTAI)
 
 rule index_bams:
@@ -101,9 +101,14 @@ rule call_damage:
 
         if (study in NO_CHR_PREFIX and study in NO_TAGS):
             shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --dont-use-tags')
+        elif (study not in NO_CHR_PREFIX and study in NO_TAGS):
+            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --dont-use-tags --add-chr')
         elif (study in NO_CHR_PREFIX and study not in NO_TAGS):
             shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref}')
         elif (study not in NO_CHR_PREFIX and study not in NO_TAGS):
             shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
         else:
-            shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
+            print("ERROR")
+            #except Exception as e: print(e)
+        #else:
+        #    shell('python bin/generate_summary_bams.py -b {input.bam} -o {output} -f {input.ref} --add-chr')
