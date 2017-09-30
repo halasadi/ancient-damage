@@ -8,3 +8,4 @@ processed_data/maptpx-runs/
 processed_data/*
 utilities/T004_all_chr*
 bin/*
+utilities/reads_data/*
