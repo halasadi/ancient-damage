@@ -68,7 +68,6 @@ if __name__ == '__main__':
     nflanking = int(args.nflanking)
     
     chrs = [i for i in range(1,23)]
-    readnum = 1
 
     for chr in chrs:
         
@@ -121,10 +120,9 @@ if __name__ == '__main__':
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - pos
 
-                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando, readnum)
+                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando, read.qname)
                 mismatches.append(val)
-            readnum += 1
-
+          
     # write to file
     with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
