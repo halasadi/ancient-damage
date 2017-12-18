@@ -3,10 +3,6 @@ import csv
 import pysam
 import argparse as arg
 
-
-MIN_BQ_SCORE = 20
-MIN_MQ_SCORE = 30
-
 def find_substitutions_wtags(aligned_pairs):
     """
     For every mutation, the mutation position
@@ -56,6 +52,8 @@ if __name__ == '__main__':
     parser.add_argument("--add-chr", help = "Does your reference use the chr prefix? For example, different versions of the references either use chr1 or 1 to designate chromosome 1, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
     parser.add_argument("--dont-use-tags", help = "don't use the MD and NM tags? If the tags are computed incorrectly from the alignment, you can use this option and we use a simple method to align reads to the reference (we do not recommend this option)", default = False, action = 'store_true', dest = "dont_use_tags")
     parser.add_argument("-n", "--nflanking", required=False, default = 1, help="number of flanking base-pairs around the mismatch to record, must be an integer >= 1", dest = "nflanking")
+    parser.add_argument("-mq", "--mapquality", required=False, default = 20, help="min. mapping quality", dest = "mq")
+    parser.add_argument("-bq", "--basequality", required=False, default = 30, help="min. base quality", dest = "bq")
     
     args = parser.parse_args()
 
@@ -73,7 +71,7 @@ if __name__ == '__main__':
     for chr in chrs:
         
         for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
-            if (read.mapping_quality < MIN_MQ_SCORE or read.is_duplicate):
+            if (read.mapping_quality < args.mq or read.is_duplicate):
                 continue
 
             if (not args.dont_use_tags) and read.get_tag('NM') == 0:
@@ -90,7 +88,7 @@ if __name__ == '__main__':
                 (mutPos, posg) = find_substitutions_wtags(aligned_pairs)
 
             
-            mapq = read.query_qualities
+            baseq = read.query_qualities
 
             if (read.is_reverse):
                 strando = '-'
@@ -107,7 +105,7 @@ if __name__ == '__main__':
                 pos = mutPos[i]
                 mut = seq[pos]
         
-                if (mapq[pos] < MIN_BQ_SCORE):
+                if (baseq[pos] < args.bq):
                     continue
 
                 # we don't count mutation in soft clipped areas
@@ -117,7 +115,7 @@ if __name__ == '__main__':
                 start = posg[i]-nflanking
                 end = posg[i]+nflanking
                 ref = fastafile[(chr-1)][start:(end+1)]
-                patt = ref[0:(nflanking+1)] + '->' + mut + ref[(nflanking+1):(2*nflanking+1)]
+                patt = (ref[0:(nflanking+1)]).upper() + '->' + mut + (ref[(nflanking+1):(2*nflanking+1)]).upper()
 
                 mutStart = pos - read.qstart
                 # read.qend is not 0-based
@@ -125,7 +123,7 @@ if __name__ == '__main__':
 
                 read_name = read_cnt
                 
-                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando, read_name)
+                val = (patt, mutStart, mutEnd, leftbreak.upper(), rightbreak.upper(), strando, read_name)
                 mismatches.append(val)
           
     # write to file
