@@ -54,6 +54,7 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--fasta", required=True, help = "reference file, the reference file must be indexed")
     parser.add_argument("-o", "--out", required=True, help="out file")
     parser.add_argument("--add-chr", help = "Does your reference use the chr prefix? For example, different versions of the references either use chr1 or 1 to designate chromosome 1, you can find out by running samtools idxstats <your bamfile> | head -1 ", default = False, action = 'store_true', dest = "add_chr")
+    parser.add_argument("--use-read-id", help = "Record the read id? Recommended if you would like to use the read id for downstream analysis", default = False, action = 'store_true', dest = "use_id")
     parser.add_argument("--dont-use-tags", help = "don't use the MD and NM tags? If the tags are computed incorrectly from the alignment, you can use this option and we use a simple method to align reads to the reference (we do not recommend this option)", default = False, action = 'store_true', dest = "dont_use_tags")
     parser.add_argument("-n", "--nflanking", required=False, default = 1, help="number of flanking base-pairs around the mismatch to record, must be an integer >= 1", dest = "nflanking")
     
@@ -69,6 +70,7 @@ if __name__ == '__main__':
     
     chrs = [i for i in range(1,23)]
 
+    read_cnt = 0
     for chr in chrs:
         
         for read in samfile.fetch(('chr' + str(chr)) if args.add_chr else str(chr)):
@@ -77,6 +79,8 @@ if __name__ == '__main__':
 
             if (not args.dont_use_tags) and read.get_tag('NM') == 0:
                 continue
+
+            read_cnt += 1
 
             seq = read.query_sequence
 
@@ -120,13 +124,17 @@ if __name__ == '__main__':
                 # read.qend is not 0-based
                 mutEnd = (read.qend-1) - pos
 
-                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando, read.qname)
+                read_name = read_cnt
+                if (args.use_id):
+                    read_name = read.qname
+                
+                val = (patt, mutStart, mutEnd, leftbreak, rightbreak, strando, read_name)
                 mismatches.append(val)
           
     # write to file
     with open(args.out, 'w') as csv_file:
         writer = csv.writer(csv_file)
         for val in mismatches:
-            writer.writerow(val)
+            writer.writerow([val[0], val[1], val[2], val[3], val[4], val[5], val[6]])
 
 
