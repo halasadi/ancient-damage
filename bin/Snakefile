@@ -49,14 +49,24 @@ HAAK = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/p
 
 SUBSET = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/compbio/ancient-damage/data/bam/Mathieson_2015_subsampled/*.bam")))]
 
+LIPSON = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/compbio/ancient-damage/data/bam/lipson_2017/*.bam")))]
 
-NO_TAGS = ["moderns", "Tyrolean_Iceman", "Skoglund", "Pinhasi_2014", "Fu_2016"]
-NO_CHR_PREFIX = ["Altai", "Fu_2016", "Denisova", "Lindo2017", "Siberian_MA-1_1stExtraction", "Skoglund", "Allentoft", "Gosling", "Reich", "sardinia", "Ust", "Altai", "moderns", "Lazaridis", "Gosling_2017", "Raghavan", "Mathieson_2015", "Haak_2015", "Mathieson_2015_subsampled", "Tibetans", "TBTN_aDNA"]
+LAZARIDIS_2017 = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/compbio/ancient-damage/data/bam/lazaridis_2017/*.bam")))]
+
+LAZARIDIS_2016 = [os.path.splitext(x)[0] for x in list(map(os.path.basename, glob.glob("/project/compbio/ancient-damage/data/bam/lazaridis_2016/*.bam")))]
+
+
+NO_TAGS = ["moderns", "Tyrolean_Iceman", "Skoglund", "Pinhasi_2014", "Fu_2016", "contaminated"]
+NO_CHR_PREFIX = ["Altai", "Fu_2016", "Denisova", "Lindo2017", "Siberian_MA-1_1stExtraction", "Skoglund", "Allentoft", "Gosling", "Reich", "sardinia", "Ust", "Altai", "moderns", "Lazaridis", "Gosling_2017", "Raghavan", "Mathieson_2015", "Haak_2015", "Mathieson_2015_subsampled", "Tibetans", "TBTN_aDNA", "lipson_2017", "lazaridis_2016", "lazaridis_2017"]
 
 workdir: '/project/compbio/ancient-damage/'
 
 rule all:
     input:
+        expand('data/csv/lipson_2017/{sample}.q30.csv', sample = LIPSON),
+        expand('data/csv/lazaridis_2016/{sample}.q30.csv', sample = LAZARIDIS_2016),
+        expand('data/csv/lazaridis_2017/{sample}.q30.csv', sample = LAZARIDIS_2017)
+#        expand('data/csv/contaminated/{sample}.q30.csv', sample = CONTAMINATED)
 #        expand('data/csv/Allentoft/{sample}.q30.csv', sample = ALLENTOFT),
 #        expand('data/csv/ancient_sherpa/{sample}.q30.csv', sample = ANCIENT_SHERPA),
 #        expand('data/csv/Gosling/{sample}.q30.csv', sample = GOSLING),
@@ -69,10 +79,10 @@ rule all:
 #        expand('data/csv/Pinhasi_2014/{sample}.q30.csv', sample = PINHASI),
 #        expand('data/csv/Siberian_MA-1_1stExtraction/{sample}.q30.csv', sample = SIBERIA),
 #        expand('data/csv/Skoglund/{sample}.q30.csv', sample = SKOGLUND),
-        expand('data/csv/TBTN_aDNA/{sample}.q30.csv', sample = TBTN)
+#        expand('data/csv/TBTN_aDNA/{sample}.q30.csv', sample = TBTN)
 #        expand('data/csv/Tyrolean_Iceman/{sample}.q30.csv', sample = ICEMAN),
 #        expand('data/csv/Ust/{sample}.q30.csv', sample = UST),
-#        expand('data/csv/Lazaridis/{sample}.q30.csv', sample = LAZARIDIS),
+#        expand('data/csv/Lazaridis/{sample}.q30.csv', sample = LAZARIDIS)
 #        expand('data/csv/Gosling_2017/{sample}.q30.csv', sample = GOSLING_2017),
 #        expand('data/csv/Raghavan/{sample}.q30.csv', sample = RAGHAVAN),
 #        expand('data/csv/Mathieson_2015/{sample}.q30.csv', sample = MATHIESON),
@@ -80,6 +90,7 @@ rule all:
 #        expand('data/csv/Haak_2015/{sample}.q30.csv', sample = HAAK),
 #        expand('data/csv/Tibetans/{sample}.q30.csv', sample = TIBETANS),
 #        expand('data/csv/Altai/{sample}.q30.csv', sample = ALTAI)
+
 
 rule index_bams:
     input:
