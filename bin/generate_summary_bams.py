@@ -58,7 +58,7 @@ if __name__ == '__main__':
     parser.add_argument("-n", "--nflanking", required=False, default = 1, help="number of flanking base-pairs around the mismatch to record, must be an integer >= 1", dest = "nflanking", type=int)
     parser.add_argument("-mq", "--mapquality", required=False, default = 20, help="min. mapping quality", dest = "mq", type = int)
     parser.add_argument("-bq", "--basequality", required=False, default = 30, help="min. base quality", dest = "bq", type = int)
-    parser.add_argument("-ss", "--num-subsample", required=False, default = 20000, help="number of reads to subsample (before filtering)", dest = "n_subsample", type = int)
+    parser.add_argument("-ss", "--num-subsample", required=False, default = 20000, help="number of reads to subsample", dest = "n_subsample", type = int)
     parser.add_argument('-seed', '--seed', required = False, default = 100, help = "seed value", dest = 'seed', type = int)
     
     args = parser.parse_args()
@@ -87,6 +87,13 @@ if __name__ == '__main__':
     for read in bam.fetch(until_eof = True):
         if (read.is_unmapped):
             continue
+
+        if (read.mapping_quality < args.mq or read.is_duplicate):
+            continue
+        
+        if (not args.dont_use_tags) and read.get_tag('NM') == 0:
+            continue
+
         if index == subbed[list_index]:
             reads.append(read)
             list_index += 1
@@ -98,12 +105,6 @@ if __name__ == '__main__':
     for r in range(len(reads)):
 
         read = reads[r]
-
-        if (read.mapping_quality < args.mq or read.is_duplicate):
-            continue
-        
-        if (not args.dont_use_tags) and read.get_tag('NM') == 0:
-            continue
 
         seq = read.query_sequence
 
